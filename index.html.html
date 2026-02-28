@@ -480,8 +480,8 @@ of a ROW of A with a COLUMN of B.
 /* ══════════════════════════════════════════════════════════
    CONFIGURATION  ← edit these two lines
 ══════════════════════════════════════════════════════════ */
-const MONSTER_IMAGE_URL = 'https://imgur.com/a/P7f7RN0'; // path or URL to your PNG
-const API_BASE          = 'https://matrix-meadow-academy.onrender.com'; // your Render URL in production
+const MONSTER_IMAGE_URL = './monster.png'; // path or URL to your PNG
+const API_BASE          = 'https://matrix-meadow-academy.onrender.com';
 
 /* ══════════════════════════════════════════════════════════
    MONSTER IMAGE LOADER
@@ -781,18 +781,10 @@ function earPts(side,M){ const s=side==='L'?-1:1;
 
 /* Canvas */
 const canvas = document.getElementById('gc'), ctx = canvas.getContext('2d');
-
 function resizeCanvas(){
-  const dpr = window.devicePixelRatio || 1;
-  const w = canvas.parentElement.getBoundingClientRect().width || 420;
-
-  canvas.width  = w * dpr;
-  canvas.height = 370 * dpr;
-  canvas.style.width  = w + 'px';
-  canvas.style.height = '370px';
-
-  ctx.setTransform(1,0,0,1,0,0);   // ✅ reset
-  ctx.scale(dpr, dpr);             // ✅ then apply DPR
+  const dpr=window.devicePixelRatio||1, w=canvas.parentElement.getBoundingClientRect().width||420;
+  canvas.width=w*dpr; canvas.height=370*dpr; canvas.style.width=w+'px'; canvas.style.height='370px';
+  ctx.scale(dpr,dpr);
 }
 
 /* PNG monster draw — applies M2 as canvas transform with y-axis flip */
@@ -988,7 +980,7 @@ async function submitToTutor(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         level_title:  lv.title,
-        level_concept: lv.title + " — " + lv.obj + "\n\n" + lv.concept,
+        level_concept:lv.concept,
         tutor_question:lv.tutorQ,
         student_answer:answer,
         attempts:     AS.attempts,
