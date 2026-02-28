@@ -484,15 +484,102 @@ const MONSTER_IMAGE_URL = './monster.png'; // path or URL to your PNG
 const API_BASE          = 'https://matrix-meadow-academy.onrender.com';
 
 /* ══════════════════════════════════════════════════════════
-   MONSTER IMAGE LOADER
+   MONSTER IMAGE LOADER + SILHOUETTE EXTRACTOR
 ══════════════════════════════════════════════════════════ */
 const monsterImg = new Image();
+monsterImg.crossOrigin = 'anonymous'; // needed for getImageData on same-origin PNGs
 let imgLoaded = false;
-monsterImg.onload  = () => { imgLoaded = true; };
-monsterImg.onerror = () => { imgLoaded = false; };
-monsterImg.src = MONSTER_IMAGE_URL;
+let silhouettePoints = null; // polygon in image-space (y increases downward, centered at 0,0)
 
 const IMG_HALF = 88; // half-size in canvas math-units
+
+/**
+ * Moore neighbourhood boundary tracing on the PNG alpha channel.
+ * Returns a smoothed polygon as [{x, y}] in image-space coordinates
+ * (x and y centered at 0, y increases downward, range ≈ −IMG_HALF..IMG_HALF).
+ * These points can be fed directly into a canvas context that already has
+ * ctx.transform(M.a, -M.c, -M.b, M.d) applied, so they transform correctly.
+ */
+function extractSilhouette(img) {
+  const SIZE = 128; // resolution for tracing — high enough for fidelity, low enough to be fast
+  const oc = document.createElement('canvas');
+  oc.width = oc.height = SIZE;
+  const octx = oc.getContext('2d', { willReadFrequently: true });
+  octx.drawImage(img, 0, 0, SIZE, SIZE);
+  const data = octx.getImageData(0, 0, SIZE, SIZE).data;
+
+  // Binary alpha grid: 1 = inside shape, 0 = outside
+  const grid = new Uint8Array(SIZE * SIZE);
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    grid[i] = data[i * 4 + 3] > 15 ? 1 : 0;
+  }
+
+  // Find first opaque pixel (top-left scan)
+  let sx = -1, sy = -1;
+  outer: for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      if (grid[y * SIZE + x]) { sx = x; sy = y; break outer; }
+    }
+  }
+  if (sx < 0) return null;
+
+  // 8-direction Moore boundary tracing
+  // Directions: E, SE, S, SW, W, NW, N, NE (clockwise starting East)
+  const DX = [ 1, 1, 0,-1,-1,-1, 0, 1];
+  const DY = [ 0, 1, 1, 1, 0,-1,-1,-1];
+
+  const boundary = [];
+  let cx = sx, cy = sy;
+  let prevDir = 6; // we first "entered" the start pixel from N (background above)
+
+  for (let step = 0; step < SIZE * SIZE; step++) {
+    boundary.push([cx, cy]);
+    // Search clockwise from the backtrack direction
+    const searchStart = (prevDir + 6) % 8;
+    let moved = false;
+    for (let i = 0; i < 8; i++) {
+      const d = (searchStart + i) % 8;
+      const nx = cx + DX[d], ny = cy + DY[d];
+      if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && grid[ny * SIZE + nx]) {
+        prevDir = d; cx = nx; cy = ny; moved = true; break;
+      }
+    }
+    if (!moved) break;
+    if (cx === sx && cy === sy && step > 2) break; // Jacob's stopping criterion
+  }
+
+  if (boundary.length < 6) return null;
+
+  // Subsample to ~300 points max for render performance
+  const skip = Math.max(1, Math.floor(boundary.length / 300));
+  let pts = boundary.filter((_, i) => i % skip === 0);
+
+  // Chaikin corner-cutting — 3 passes for a smooth silhouette
+  for (let pass = 0; pass < 3; pass++) {
+    const s = [];
+    const n = pts.length;
+    for (let i = 0; i < n; i++) {
+      const a = pts[i], b = pts[(i + 1) % n];
+      s.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]]);
+      s.push([0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]);
+    }
+    pts = s;
+  }
+
+  // Convert pixel coords (0..SIZE, y-down) → image-space coords (centered, y-down)
+  // These plug straight into the canvas after ctx.transform(M.a,-M.c,-M.b,M.d) is applied.
+  return pts.map(([px, py]) => ({
+    x: (px / SIZE - 0.5) * IMG_HALF * 2,
+    y: (py / SIZE - 0.5) * IMG_HALF * 2,
+  }));
+}
+
+monsterImg.onload = () => {
+  imgLoaded = true;
+  silhouettePoints = extractSilhouette(monsterImg);
+};
+monsterImg.onerror = () => { imgLoaded = false; };
+monsterImg.src = MONSTER_IMAGE_URL;
 
 /* ══════════════════════════════════════════════════════════
    MATH ENGINE
@@ -791,20 +878,36 @@ function resizeCanvas(){
 function drawMonsterPNG(M, cx, cy, isTarget) {
   ctx.save();
   ctx.translate(cx, cy);
-  // canvas.transform(a,b,c,d,e,f) where:
-  //   a,d = scale-x, scale-y  |  b,c = shear
-  // For our M2 with canvas y-flip: ctx.transform(M.a, -M.c, -M.b, M.d, 0, 0)
+  // ctx.transform(a,b,c,d,e,f) canvas API: x'=a*x+c*y, y'=b*x+d*y
+  // Our M2 lives in math-space (y-up). Canvas is y-down.
+  // Mapping: ctx.transform(M.a, -M.c, -M.b, M.d, 0, 0)
   ctx.transform(M.a, -M.c, -M.b, M.d, 0, 0);
   const h = IMG_HALF * 2;
 
   if (isTarget) {
-    ctx.globalAlpha = 0.38;
+    // Faded ghost image
+    ctx.globalAlpha = 0.32;
     ctx.drawImage(monsterImg, -IMG_HALF, -IMG_HALF, h, h);
-    ctx.globalAlpha = 0.75;
-    ctx.setLineDash([8, 5]);
+
+    // Silhouette outline drawn in image-space after transform is applied,
+    // so it correctly follows the shape under any M2 (scale/shear/rotate/reflect).
+    ctx.globalAlpha = 0.9;
+    ctx.setLineDash([9, 6]);
     ctx.strokeStyle = '#e03030';
     ctx.lineWidth = 2.5;
-    ctx.strokeRect(-IMG_HALF, -IMG_HALF, h, h);
+
+    if (silhouettePoints && silhouettePoints.length > 4) {
+      ctx.beginPath();
+      ctx.moveTo(silhouettePoints[0].x, silhouettePoints[0].y);
+      for (let i = 1; i < silhouettePoints.length; i++) {
+        ctx.lineTo(silhouettePoints[i].x, silhouettePoints[i].y);
+      }
+      ctx.closePath();
+    } else {
+      // Fallback until silhouette is extracted: plain rect
+      ctx.rect(-IMG_HALF, -IMG_HALF, h, h);
+    }
+    ctx.stroke();
     ctx.setLineDash([]);
   } else {
     ctx.globalAlpha = 1;
