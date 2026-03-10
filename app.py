@@ -9,7 +9,8 @@ _raw = os.environ.get("FRONTEND_ORIGINS", "*")
 ALLOWED_ORIGINS = [o.strip() for o in _raw.split(",")] if _raw != "*" else "*"
 CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS}})
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+api_key = os.environ.get("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key) if api_key else None
 
 TUTOR_SYSTEM = """You are Professor Meadow, a warm and encouraging math tutor for high school students learning linear algebra through an interactive game. Your job is to evaluate a student's conceptual understanding after they complete a level.
 
@@ -26,13 +27,20 @@ Rules:
 
 @app.route("/api/tutor", methods=["POST"])
 def tutor():
-    data = request.get_json(force=True)
+    if client is None:
+        return jsonify({"error": "Tutor backend is not configured"}), 500
+
+    data = request.get_json(silent=True) or {}
 
     level_title = data.get("level_title", "Unknown level")
     level_concept = data.get("level_concept", "")
     tutor_question = data.get("tutor_question", "")
-    student_answer = data.get("student_answer", "").strip()
-    attempts = int(data.get("attempts", 1))
+    student_answer = str(data.get("student_answer", "")).strip()
+
+    try:
+        attempts = int(data.get("attempts", 1))
+    except (TypeError, ValueError):
+        attempts = 1
 
     if not student_answer:
         return jsonify({"error": "student_answer is required"}), 400
@@ -56,11 +64,12 @@ def tutor():
             max_tokens=300,
         )
 
-        reply = response.choices[0].message.content
+        reply = response.choices[0].message.content or "Nice work — keep going!"
         return jsonify({"response": reply})
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        app.logger.exception("Tutor endpoint failed")
+        return jsonify({"error": "Tutor service unavailable"}), 500
 
 @app.route("/health", methods=["GET"])
 def health():
