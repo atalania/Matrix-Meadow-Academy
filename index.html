@@ -77,8 +77,19 @@ body {
 .ldot:hover:not(.cur){transform:scale(1.08);}
 
 /* Canvas */
-#canvas-wrap{border-radius:12px;overflow:hidden;border:2px solid #c8dff0;background:linear-gradient(135deg,#eef7ff,#e8f5e9);}
+#canvas-wrap{
+  border-radius:12px;
+  overflow:hidden;
+  border:2px solid #c8dff0;
+  background:linear-gradient(135deg,#eef7ff,#e8f5e9);
+  position:relative;
+}
 #gc{display:block;width:100%;}
+.canvas-loading{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:800; color:var(--muted);
+  background:rgba(255,255,255,.45); backdrop-filter:blur(2px);
+}
 
 /* Level info */
 .linfo{background:linear-gradient(135deg,#667eea18,#764ba218);border-radius:12px;
@@ -221,7 +232,8 @@ table.dm td{min-width:40px;text-align:center;padding:7px 8px;background:rgba(255
 .choice:disabled{cursor:not-allowed;}
 .qprogress{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;}
 .qp-dot{width:14px;height:14px;border-radius:50%;background:#e0e4ee;}
-.qp-dot.done-ok{background:var(--correct);} .qp-dot.done-bad{background:var(--wrong);}
+.qp-dot.done-ok{background:var(--correct);}
+.qp-dot.done-bad{background:var(--wrong);}
 .qp-dot.cur{background:var(--accent2);box-shadow:0 0 0 3px rgba(255,217,61,.35);}
 
 /* Animations */
@@ -271,6 +283,7 @@ table.dm td{min-width:40px;text-align:center;padding:7px 8px;background:rgba(255
           <div class="panel-title"><span class="ico">🎮</span> Monster Preview</div>
           <div id="canvas-wrap">
             <canvas id="gc" width="420" height="370"></canvas>
+            <div id="canvas-loading" class="canvas-loading">Loading monster...</div>
           </div>
           <div style="display:flex;gap:12px;margin-top:10px;font-size:12px;font-weight:800;flex-wrap:wrap;">
             <span style="display:flex;align-items:center;gap:4px;">
@@ -321,7 +334,6 @@ table.dm td{min-width:40px;text-align:center;padding:7px 8px;background:rgba(255
           </div>
         </div>
 
-        <!-- Teaching panel — explains concept WITHOUT giving answer -->
         <div class="panel">
           <div class="panel-title"><span class="ico">📖</span> Before You Start</div>
           <div class="teach-panel">
@@ -329,13 +341,11 @@ table.dm td{min-width:40px;text-align:center;padding:7px 8px;background:rgba(255
           </div>
         </div>
 
-        <!-- Formula reference -->
         <div class="panel">
           <div class="panel-title"><span class="ico">📐</span> Formula Reference</div>
           <div class="concept" id="concept-txt"></div>
         </div>
 
-        <!-- Monster collection -->
         <div class="panel">
           <div class="panel-title"><span class="ico">📦</span> Monster Collection</div>
           <div class="coll-grid" id="coll-grid"></div>
@@ -452,12 +462,12 @@ of a ROW of A with a COLUMN of B.
 </div><!-- #app -->
 
 <!-- ══════════════════════════════════════════════
-     AI TUTOR MODAL  (shown after each level)
+     AI TUTOR MODAL
 ══════════════════════════════════════════════ -->
 <div id="tutor-modal">
   <div class="tutor-card">
     <div class="tutor-top">
-      <div class="tutor-mon" id="tm-mon">🐉</div>
+      <div class="tutor-mon" id="tm-mon">🎓</div>
       <div class="tutor-win">Level Complete!</div>
       <div class="tutor-pts" id="tm-pts">+100 pts</div>
     </div>
@@ -478,43 +488,51 @@ of a ROW of A with a COLUMN of B.
 
 <script>
 /* ══════════════════════════════════════════════════════════
-   CONFIGURATION  ← edit these two lines
+   CONFIGURATION
 ══════════════════════════════════════════════════════════ */
-const MONSTER_IMAGE_URL = './monster.png'; // path or URL to your PNG
-const API_BASE          = 'https://matrix-meadow-academy.onrender.com';
+const MONSTER_IMAGE_URL = './monster.png';
+const API_BASE = 'https://matrix-meadow-academy.onrender.com';
 
 /* ══════════════════════════════════════════════════════════
    MONSTER IMAGE LOADER + SILHOUETTE EXTRACTOR
 ══════════════════════════════════════════════════════════ */
 const monsterImg = new Image();
-monsterImg.crossOrigin = 'anonymous'; // needed for getImageData on same-origin PNGs
-let imgLoaded = false;
-let silhouettePoints = null; // polygon in image-space (y increases downward, centered at 0,0)
+monsterImg.crossOrigin = 'anonymous';
 
-const IMG_HALF = 88; // half-size in canvas math-units
+let imgState = 'loading'; // 'loading' | 'loaded' | 'error'
+let silhouettePoints = null;
+const IMG_HALF = 88;
+
+function updateCanvasLoadingUI() {
+  const loadingEl = document.getElementById('canvas-loading');
+  if (!loadingEl) return;
+
+  if (imgState === 'loading') {
+    loadingEl.style.display = 'flex';
+    loadingEl.textContent = 'Loading monster...';
+  } else if (imgState === 'error') {
+    loadingEl.style.display = 'none';
+  } else {
+    loadingEl.style.display = 'none';
+  }
+}
 
 /**
  * Moore neighbourhood boundary tracing on the PNG alpha channel.
- * Returns a smoothed polygon as [{x, y}] in image-space coordinates
- * (x and y centered at 0, y increases downward, range ≈ −IMG_HALF..IMG_HALF).
- * These points can be fed directly into a canvas context that already has
- * ctx.transform(M.a, -M.c, -M.b, M.d) applied, so they transform correctly.
  */
 function extractSilhouette(img) {
-  const SIZE = 128; // resolution for tracing — high enough for fidelity, low enough to be fast
+  const SIZE = 128;
   const oc = document.createElement('canvas');
   oc.width = oc.height = SIZE;
   const octx = oc.getContext('2d', { willReadFrequently: true });
   octx.drawImage(img, 0, 0, SIZE, SIZE);
   const data = octx.getImageData(0, 0, SIZE, SIZE).data;
 
-  // Binary alpha grid: 1 = inside shape, 0 = outside
   const grid = new Uint8Array(SIZE * SIZE);
   for (let i = 0; i < SIZE * SIZE; i++) {
     grid[i] = data[i * 4 + 3] > 15 ? 1 : 0;
   }
 
-  // Find first opaque pixel (top-left scan)
   let sx = -1, sy = -1;
   outer: for (let y = 0; y < SIZE; y++) {
     for (let x = 0; x < SIZE; x++) {
@@ -523,18 +541,15 @@ function extractSilhouette(img) {
   }
   if (sx < 0) return null;
 
-  // 8-direction Moore boundary tracing
-  // Directions: E, SE, S, SW, W, NW, N, NE (clockwise starting East)
   const DX = [ 1, 1, 0,-1,-1,-1, 0, 1];
   const DY = [ 0, 1, 1, 1, 0,-1,-1,-1];
 
   const boundary = [];
   let cx = sx, cy = sy;
-  let prevDir = 6; // we first "entered" the start pixel from N (background above)
+  let prevDir = 6;
 
   for (let step = 0; step < SIZE * SIZE; step++) {
     boundary.push([cx, cy]);
-    // Search clockwise from the backtrack direction
     const searchStart = (prevDir + 6) % 8;
     let moved = false;
     for (let i = 0; i < 8; i++) {
@@ -545,16 +560,14 @@ function extractSilhouette(img) {
       }
     }
     if (!moved) break;
-    if (cx === sx && cy === sy && step > 2) break; // Jacob's stopping criterion
+    if (cx === sx && cy === sy && step > 2) break;
   }
 
   if (boundary.length < 6) return null;
 
-  // Subsample to ~300 points max for render performance
   const skip = Math.max(1, Math.floor(boundary.length / 300));
   let pts = boundary.filter((_, i) => i % skip === 0);
 
-  // Chaikin corner-cutting — 3 passes for a smooth silhouette
   for (let pass = 0; pass < 3; pass++) {
     const s = [];
     const n = pts.length;
@@ -566,8 +579,6 @@ function extractSilhouette(img) {
     pts = s;
   }
 
-  // Convert pixel coords (0..SIZE, y-down) → image-space coords (centered, y-down)
-  // These plug straight into the canvas after ctx.transform(M.a,-M.c,-M.b,M.d) is applied.
   return pts.map(([px, py]) => ({
     x: (px / SIZE - 0.5) * IMG_HALF * 2,
     y: (py / SIZE - 0.5) * IMG_HALF * 2,
@@ -575,10 +586,16 @@ function extractSilhouette(img) {
 }
 
 monsterImg.onload = () => {
-  imgLoaded = true;
   silhouettePoints = extractSilhouette(monsterImg);
+  imgState = 'loaded';
+  updateCanvasLoadingUI();
 };
-monsterImg.onerror = () => { imgLoaded = false; };
+
+monsterImg.onerror = () => {
+  imgState = 'error';
+  updateCanvasLoadingUI();
+};
+
 monsterImg.src = MONSTER_IMAGE_URL;
 
 /* ══════════════════════════════════════════════════════════
@@ -838,19 +855,37 @@ det = −1  (orientation flips!)`,
    ALIGNMENT GAME STATE
 ══════════════════════════════════════════════════════════ */
 const AS = {
-  lvl: 0, score: 0, streak: 0, bestStreak: 0,
-  attempts: 0, correct: 0,
+  lvl: 0,
+  score: 0,
+  streak: 0,
+  bestStreak: 0,
+  attempts: 0,
+  totalAttempts: 0,
+  totalCorrect: 0,
   curMat: M2.I(),
-  animFrom: M2.I(), animTo: M2.I(), animT: 1, animDur: 600,
-  animStart: 0, animCB: null,
-  done: [], seed: 17,
+  animFrom: M2.I(),
+  animTo: M2.I(),
+  animT: 1,
+  animDur: 600,
+  animStart: 0,
+  animCB: null,
+  done: [],
+  seed: 17,
   levels: [],
   timerStart: Date.now(),
 };
 
-function lerpM(A,B,t){ const e=t<.5?2*t*t:-1+(4-2*t)*t;
-  return new M2(A.a+(B.a-A.a)*e,A.b+(B.b-A.b)*e,A.c+(B.c-A.c)*e,A.d+(B.d-A.d)*e); }
-function trigAnim(to,cb){ AS.animFrom=AS.curMat; AS.animTo=to; AS.animT=0; AS.animStart=performance.now(); AS.animCB=cb; }
+function lerpM(A,B,t){
+  const e=t<.5?2*t*t:-1+(4-2*t)*t;
+  return new M2(A.a+(B.a-A.a)*e,A.b+(B.b-A.b)*e,A.c+(B.c-A.c)*e,A.d+(B.d-A.d)*e);
+}
+function trigAnim(to,cb){
+  AS.animFrom=AS.curMat;
+  AS.animTo=to;
+  AS.animT=0;
+  AS.animStart=performance.now();
+  AS.animCB=cb;
+}
 
 /* Fallback procedural monster */
 const EMOJI=['🐱','🐭','🐸','🦊','🐼','🐨','🦁','🐯','🐻','🦄'];
@@ -867,30 +902,33 @@ function earPts(side,M){ const s=side==='L'?-1:1;
   return [[s*38,-50],[s*18,-75],[s*56,-68]].map(([x,y])=>M.mv({x,y})); }
 
 /* Canvas */
-const canvas = document.getElementById('gc'), ctx = canvas.getContext('2d');
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+
 function resizeCanvas(){
-  const dpr=window.devicePixelRatio||1, w=canvas.parentElement.getBoundingClientRect().width||420;
-  canvas.width=w*dpr; canvas.height=370*dpr; canvas.style.width=w+'px'; canvas.style.height='370px';
-  ctx.scale(dpr,dpr);
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.parentElement.getBoundingClientRect().width || 420;
+
+  canvas.width = w * dpr;
+  canvas.height = 370 * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = '370px';
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
 }
 
-/* PNG monster draw — applies M2 as canvas transform with y-axis flip */
+/* PNG monster draw */
 function drawMonsterPNG(M, cx, cy, isTarget) {
   ctx.save();
   ctx.translate(cx, cy);
-  // ctx.transform(a,b,c,d,e,f) canvas API: x'=a*x+c*y, y'=b*x+d*y
-  // Our M2 lives in math-space (y-up). Canvas is y-down.
-  // Mapping: ctx.transform(M.a, -M.c, -M.b, M.d, 0, 0)
   ctx.transform(M.a, -M.c, -M.b, M.d, 0, 0);
   const h = IMG_HALF * 2;
 
   if (isTarget) {
-    // Faded ghost image
     ctx.globalAlpha = 0.32;
     ctx.drawImage(monsterImg, -IMG_HALF, -IMG_HALF, h, h);
 
-    // Silhouette outline drawn in image-space after transform is applied,
-    // so it correctly follows the shape under any M2 (scale/shear/rotate/reflect).
     ctx.globalAlpha = 0.9;
     ctx.setLineDash([9, 6]);
     ctx.strokeStyle = '#e03030';
@@ -904,7 +942,6 @@ function drawMonsterPNG(M, cx, cy, isTarget) {
       }
       ctx.closePath();
     } else {
-      // Fallback until silhouette is extracted: plain rect
       ctx.rect(-IMG_HALF, -IMG_HALF, h, h);
     }
     ctx.stroke();
@@ -967,10 +1004,10 @@ function render(ts){
   const lv=AS.levels[AS.lvl], m=mon(AS.seed+AS.lvl);
   const tgt=lv.target;
 
-  if(imgLoaded){
+  if(imgState === 'loaded'){
     drawMonsterPNG(tgt, cx, cy, true);
     drawMonsterPNG(AS.curMat, cx, cy, false);
-  } else {
+  } else if (imgState === 'error') {
     drawShape(monPts(tgt),earPts('L',tgt),earPts('R',tgt),cx,cy,m.c,.55,true);
     drawShape(monPts(AS.curMat),earPts('L',AS.curMat),earPts('R',AS.curMat),cx,cy,m.c,1,false);
   }
@@ -980,18 +1017,35 @@ function render(ts){
 }
 
 /* ── UI helpers ─ */
-function gv(id){ return parseFloat(document.getElementById(id).value)||0; }
+function parseInputValue(id){
+  const raw = document.getElementById(id).value.trim();
+  if(raw === '') return null;
+  const num = parseFloat(raw);
+  return Number.isNaN(num) ? null : num;
+}
 function fmt(n){ return Math.abs(n-Math.round(n))<0.0001?Math.round(n).toString():parseFloat(n.toFixed(4)).toString(); }
-function getInput(){ return new M2(gv('i00'),gv('i01'),gv('i10'),gv('i11')); }
+function getInput(){
+  const vals = ['i00','i01','i10','i11'].map(parseInputValue);
+  if(vals.some(v => v === null)) return null;
+  return new M2(vals[0], vals[1], vals[2], vals[3]);
+}
 function setFB(el,type,ico,msg){
   const e=document.getElementById(el); e.className='fb '+type;
-  e.innerHTML=`<span class="fb-ico">${ico}</span><span>${msg}</span>`;}
-function liveDet(){ document.getElementById('live-det').textContent=getInput().det().toFixed(3); }
+  e.innerHTML=`<span class="fb-ico">${ico}</span><span>${msg}</span>`;
+}
+function liveDet(){
+  const M = getInput();
+  document.getElementById('live-det').textContent = M ? M.det().toFixed(3) : '—';
+}
 
-/* ── Load level (always hard mode: all cells blank) ─ */
+/* ── Load level ─ */
 function loadLevel(idx){
-  AS.lvl=idx; AS.attempts=0;
-  AS.curMat=M2.I(); AS.animT=1; AS.animTo=M2.I();
+  AS.lvl=idx;
+  AS.attempts=0;
+  AS.curMat=M2.I();
+  AS.animT=1;
+  AS.animTo=M2.I();
+
   const lv=AS.levels[idx];
 
   document.getElementById('ltitle').textContent=lv.title;
@@ -1001,10 +1055,10 @@ function loadLevel(idx){
   document.getElementById('concept-txt').textContent=lv.concept;
   document.getElementById('a-lnum').textContent=idx+1;
 
-  // Hard mode: all four cells blank, nothing locked
   ['i00','i01','i10','i11'].forEach(id=>{
     const el=document.getElementById(id);
-    el.value=''; el.readOnly=false;
+    el.value='';
+    el.readOnly=false;
     el.classList.remove('good','bad');
   });
 
@@ -1016,16 +1070,28 @@ function loadLevel(idx){
 
 function applyMatrix(){
   const M=getInput();
+  if(!M){
+    setFB('afb','info','⚠️','Please fill in all four matrix entries first.');
+    return;
+  }
+
   const lv=AS.levels[AS.lvl];
   AS.attempts++;
+  AS.totalAttempts++;
+
   const correct=checkAnswer(M,lv);
+
   trigAnim(M,()=>{
     if(correct){
-      AS.streak++; AS.bestStreak=Math.max(AS.bestStreak,AS.streak);
-      AS.correct++; AS.score+=Math.max(10,110-AS.attempts*12);
+      AS.streak++;
+      AS.bestStreak=Math.max(AS.bestStreak,AS.streak);
+      AS.totalCorrect++;
+      AS.score+=Math.max(10,110-AS.attempts*12);
+
       if(!AS.done.includes(AS.lvl)) AS.done.push(AS.lvl);
       localStorage.setItem('mm_done',JSON.stringify(AS.done));
       localStorage.setItem('mm_score',AS.score);
+
       setFB('afb','ok','🎉','Correct! Monster perfectly aligned!');
       updateStats();
       setTimeout(showTutorModal,400);
@@ -1034,6 +1100,7 @@ function applyMatrix(){
       setFB('afb','err','❌',`Not quite — det=${M.det().toFixed(3)}. Use Preview to see what your matrix does, then adjust.`);
       document.querySelector('.game-layout')?.classList.add('shake');
       setTimeout(()=>document.querySelector('.game-layout')?.classList.remove('shake'),380);
+      updateStats();
     }
   });
 }
@@ -1045,6 +1112,10 @@ function checkAnswer(M,lv){
 
 function previewMatrix(){
   const M=getInput();
+  if(!M){
+    setFB('afb','info','⚠️','Please fill in all four matrix entries first.');
+    return;
+  }
   setFB('afb','info','👁',`Preview: det=${M.det().toFixed(3)}. Adjust your values then click Apply.`);
   trigAnim(M,null);
 }
@@ -1053,8 +1124,8 @@ function resetLevel(){ loadLevel(AS.lvl); }
 
 /* ── AI Tutor modal ─ */
 function showTutorModal(){
-  const lv=AS.levels[AS.lvl], m=mon(AS.seed+AS.lvl);
-  document.getElementById('tm-mon').textContent=imgLoaded?'🎓':m.e;
+  const lv=AS.levels[AS.lvl];
+  document.getElementById('tm-mon').textContent='🎓';
   document.getElementById('tm-pts').textContent=`+${Math.max(10,110-AS.attempts*12)} pts earned`;
   document.getElementById('tm-question').textContent=lv.tutorQ;
   document.getElementById('tm-answer').value='';
@@ -1062,6 +1133,7 @@ function showTutorModal(){
   resp.textContent=''; resp.className='tutor-response';
   document.getElementById('tm-submit').style.display='';
   document.getElementById('tm-next').style.display='none';
+  document.getElementById('tm-submit').disabled=false;
   document.getElementById('tutor-modal').classList.add('on');
   spawnConf();
 }
@@ -1069,8 +1141,10 @@ function showTutorModal(){
 async function submitToTutor(){
   const answer=document.getElementById('tm-answer').value.trim();
   if(!answer){
-    document.getElementById('tm-answer').focus(); return;
+    document.getElementById('tm-answer').focus();
+    return;
   }
+
   const lv=AS.levels[AS.lvl];
   const resp=document.getElementById('tm-response');
   resp.className='tutor-response thinking show';
@@ -1082,14 +1156,16 @@ async function submitToTutor(){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        level_title:  lv.title,
-        level_concept:lv.concept,
-        tutor_question:lv.tutorQ,
-        student_answer:answer,
-        attempts:     AS.attempts,
+        level_title: lv.title,
+        level_concept: lv.concept,
+        tutor_question: lv.tutorQ,
+        student_answer: answer,
+        attempts: AS.attempts,
       })
     });
+
     const data=await res.json();
+
     if(data.response){
       resp.className='tutor-response show';
       resp.textContent=data.response;
@@ -1116,11 +1192,14 @@ function nextLevel(){
 }
 
 function updateLDots(){
-  const bar=document.getElementById('ldots'); bar.innerHTML='';
+  const bar=document.getElementById('ldots');
+  bar.innerHTML='';
   AS.levels.forEach((_,i)=>{
     const d=document.createElement('div');
     d.className='ldot'+(AS.done.includes(i)?' done':'')+(i===AS.lvl?' cur':'');
-    d.textContent=i+1; d.title=AS.levels[i].title; d.onclick=()=>loadLevel(i);
+    d.textContent=i+1;
+    d.title=AS.levels[i].title;
+    d.onclick=()=>loadLevel(i);
     bar.appendChild(d);
   });
 }
@@ -1128,12 +1207,18 @@ function updateLDots(){
 function updateStats(){
   document.getElementById('a-score').textContent=AS.score;
   document.getElementById('a-streak').textContent=AS.streak;
-  document.getElementById('a-acc').textContent=AS.attempts>0?Math.round(AS.correct/AS.attempts*100)+'%':'—';
-  const cg=document.getElementById('coll-grid'); cg.innerHTML='';
+  document.getElementById('a-acc').textContent=
+    AS.totalAttempts > 0
+      ? Math.round(AS.totalCorrect / AS.totalAttempts * 100) + '%'
+      : '—';
+
+  const cg=document.getElementById('coll-grid');
+  cg.innerHTML='';
   AS.levels.forEach((_,i)=>{
     const t=document.createElement('div');
     t.className='mthumb'+(AS.done.includes(i)?'':' locked');
-    if(imgLoaded){
+
+    if(imgState === 'loaded'){
       const img=document.createElement('img');
       img.src=MONSTER_IMAGE_URL;
       if(!AS.done.includes(i)) img.style.filter='grayscale(1) opacity(.4)';
@@ -1142,8 +1227,14 @@ function updateStats(){
       const m=mon(AS.seed+i);
       t.textContent=AS.done.includes(i)?m.e:'?';
     }
+
     t.title=AS.done.includes(i)?`Monster ${i+1} earned!`:'Complete level to unlock';
-    if(AS.done.includes(i)){ const b=document.createElement('span'); b.className='badge'; b.textContent=i+1; t.appendChild(b); }
+    if(AS.done.includes(i)){
+      const b=document.createElement('span');
+      b.className='badge';
+      b.textContent=i+1;
+      t.appendChild(b);
+    }
     cg.appendChild(t);
   });
 }
@@ -1157,7 +1248,8 @@ setInterval(()=>{
 const confPieces=[], cColors=['#ff6b6b','#ffd93d','#6bcb77','#48cae4','#c77dff','#f4a261'];
 function spawnConf(){
   for(let i=0;i<55;i++){
-    const el=document.createElement('div'); el.className='conf';
+    const el=document.createElement('div');
+    el.className='conf';
     const sz=8+Math.random()*9;
     el.style.cssText=`width:${sz}px;height:${sz}px;background:${cColors[Math.floor(Math.random()*cColors.length)]};left:${Math.random()*100}vw;top:-20px;border-radius:${Math.random()>.5?'50%':'3px'};`;
     document.body.appendChild(el);
@@ -1167,17 +1259,30 @@ function spawnConf(){
 }
 let confRAF;
 function animConf(){
-  confPieces.forEach(p=>{p.vy+=p.g;p.y+=p.vy;p.el.style.top=p.y+'px';
-    p.el.style.left=(parseFloat(p.el.style.left)+p.vx)+'px';});
+  confPieces.forEach(p=>{
+    p.vy+=p.g;
+    p.y+=p.vy;
+    p.el.style.top=p.y+'px';
+    p.el.style.left=(parseFloat(p.el.style.left)+p.vx)+'px';
+  });
   confRAF=requestAnimationFrame(animConf);
   if(confPieces.every(p=>p.y>window.innerHeight+60)) clearConf();
 }
-function clearConf(){ cancelAnimationFrame(confRAF); confPieces.forEach(p=>p.el.remove()); confPieces.length=0; }
+function clearConf(){
+  cancelAnimationFrame(confRAF);
+  confPieces.forEach(p=>p.el.remove());
+  confPieces.length=0;
+}
 
 /* Input events */
 ['i00','i01','i10','i11'].forEach(id=>{
   document.getElementById(id).addEventListener('input',liveDet);
-  document.getElementById(id).addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();applyMatrix();}});
+  document.getElementById(id).addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      applyMatrix();
+    }
+  });
 });
 
 /* ══════════════════════════════════════════════════════════
@@ -1195,10 +1300,15 @@ function mkTbl(M){ let h=`<table class="dm">`;
 
 function newDrill(){
   const r=rangeN(DS.range);
-  DS.A=makeMat(DS.size,r); DS.B=makeMat(DS.size,r); DS.C=mulMat(DS.A,DS.B);
-  const el=document.getElementById('drill-mats'); el.innerHTML='';
+  DS.A=makeMat(DS.size,r);
+  DS.B=makeMat(DS.size,r);
+  DS.C=mulMat(DS.A,DS.B);
+  const el=document.getElementById('drill-mats');
+  el.innerHTML='';
   ['A','B'].forEach(name=>{
-    const box=document.createElement('div'); box.className='dmat-box'; box.id=`dm${name}`;
+    const box=document.createElement('div');
+    box.className='dmat-box';
+    box.id=`dm${name}`;
     box.innerHTML=`<div class="dmat-title">Matrix ${name}</div>`+mkTbl(name==='A'?DS.A:DS.B);
     el.appendChild(box);
   });
@@ -1209,13 +1319,21 @@ function newDrill(){
 }
 
 function buildAnswerGrid(){
-  const n=DS.size, el=document.getElementById('drill-answer'); el.innerHTML='';
-  const grid=document.createElement('div'); grid.className='dins';
+  const n=DS.size, el=document.getElementById('drill-answer');
+  el.innerHTML='';
+  const grid=document.createElement('div');
+  grid.className='dins';
   grid.style.gridTemplateColumns=`repeat(${n},58px)`;
+
   for(let r=0;r<n;r++) for(let c=0;c<n;c++){
-    const inp=document.createElement('input'); inp.className='dinput';
-    inp.type='text'; inp.inputMode='numeric'; inp.autocomplete='off';
-    inp.dataset.r=r; inp.dataset.c=c; inp.placeholder='?';
+    const inp=document.createElement('input');
+    inp.className='dinput';
+    inp.type='text';
+    inp.inputMode='numeric';
+    inp.autocomplete='off';
+    inp.dataset.r=r;
+    inp.dataset.c=c;
+    inp.placeholder='?';
     inp.addEventListener('keydown',e=>{
       if(e.key==='Enter'){e.preventDefault();drillCheck();return;}
       const nr=+inp.dataset.r,nc=+inp.dataset.c;
@@ -1253,9 +1371,17 @@ function drillCheck(){
     if(pass) ok++;
   }
   const total=n*n, allOk=ok===total;
-  if(allOk){ clearDrillTimer(); DS.streak++;DS.best=Math.max(DS.best,DS.streak); DS.score+=10;
+  if(allOk){
+    clearDrillTimer();
+    DS.streak++;
+    DS.best=Math.max(DS.best,DS.streak);
+    DS.score+=10;
     setFB('dfb','ok','✅',`All ${total} entries correct! +10 pts`);
-  } else { DS.streak=0; DS.score-=3; setFB('dfb','err','❌',`${ok}/${total} correct. −3 pts.`); }
+  } else {
+    DS.streak=0;
+    DS.score-=3;
+    setFB('dfb','err','❌',`${ok}/${total} correct. −3 pts.`);
+  }
   document.getElementById('d-score').textContent=DS.score;
   document.getElementById('d-streak').textContent=DS.streak;
   document.getElementById('d-best').textContent=DS.best;
@@ -1272,45 +1398,89 @@ function buildDotHint(){
   document.getElementById('dp-hint').innerHTML=html;
 }
 
-function drillReveal(){
-  clearDrillTimer(); DS.streak=0;
+function drillReveal(fromTimeout = false){
+  clearDrillTimer();
+  DS.streak=0;
   const n=DS.size,el=document.getElementById('drill-answer');
   for(let r=0;r<n;r++) for(let c=0;c<n;c++){
     const inp=el.querySelector(`input[data-r="${r}"][data-c="${c}"]`);
-    inp.value=DS.C[r][c]; inp.classList.add('correct'); inp.classList.remove('wrong');
+    inp.value=DS.C[r][c];
+    inp.classList.add('correct');
+    inp.classList.remove('wrong');
   }
-  setFB('dfb','info','👀','Answer revealed. Streak reset. Study the dot-product steps →');
+  setFB(
+    'dfb',
+    'info',
+    fromTimeout ? '⏰' : '👀',
+    fromTimeout
+      ? 'Time up! Answer revealed. Study the dot-product steps →'
+      : 'Answer revealed. Streak reset. Study the dot-product steps →'
+  );
   document.getElementById('d-streak').textContent=0;
   buildDotHint();
 }
 
 function startDrillTimer(){
   clearDrillTimer();
-  if(DS.timerMode==='off'){document.getElementById('d-timer-disp').textContent='—';return;}
-  DS.timeLeft=+DS.timerMode; updateTimerFill();
+  if(DS.timerMode==='off'){
+    document.getElementById('d-timer-disp').textContent='—';
+    return;
+  }
+  DS.timeLeft=+DS.timerMode;
+  document.getElementById('d-timer-disp').textContent=`${DS.timeLeft}s`;
+  updateTimerFill();
   DS.timerH=setInterval(()=>{
-    DS.timeLeft--; updateTimerFill();
+    DS.timeLeft--;
+    updateTimerFill();
     document.getElementById('d-timer-disp').textContent=`${DS.timeLeft}s`;
-    if(DS.timeLeft<=0){ clearDrillTimer(); DS.streak=0; DS.score-=1;
-      setFB('dfb','info','⏰','Time up! Revealing answer…'); document.getElementById('d-streak').textContent=0; drillReveal(); }
+    if(DS.timeLeft<=0){
+      clearDrillTimer();
+      DS.streak=0;
+      DS.score-=1;
+      document.getElementById('d-streak').textContent=0;
+      document.getElementById('d-score').textContent=DS.score;
+      drillReveal(true);
+    }
   },1000);
 }
-function clearDrillTimer(){ clearInterval(DS.timerH); DS.timerH=null; DS.timeLeft=null;
+function clearDrillTimer(){
+  clearInterval(DS.timerH);
+  DS.timerH=null;
+  DS.timeLeft=null;
   document.getElementById('d-timer-disp').textContent='—';
-  const f=document.getElementById('drill-timer-fill'); f.style.width='100%'; f.className='timer-fill'; }
-function updateTimerFill(){
-  const max=+DS.timerMode, pct=DS.timeLeft/max*100;
   const f=document.getElementById('drill-timer-fill');
-  f.style.width=pct+'%'; f.className='timer-fill'+(pct<40?' warn':'')+(pct<15?' danger':'');
+  f.style.width='100%';
+  f.className='timer-fill';
+}
+function updateTimerFill(){
+  const max=+DS.timerMode;
+  if(!max || !DS.timeLeft) {
+    const f=document.getElementById('drill-timer-fill');
+    f.style.width='100%';
+    f.className='timer-fill';
+    return;
+  }
+  const pct=DS.timeLeft/max*100;
+  const f=document.getElementById('drill-timer-fill');
+  f.style.width=pct+'%';
+  f.className='timer-fill'+(pct<40?' warn':'')+(pct<15?' danger':'');
 }
 
 document.querySelectorAll('[data-size]').forEach(b=>b.addEventListener('click',()=>{
-  DS.size=+b.dataset.size; document.querySelectorAll('[data-size]').forEach(x=>x.classList.toggle('sel',x===b)); newDrill();}));
+  DS.size=+b.dataset.size;
+  document.querySelectorAll('[data-size]').forEach(x=>x.classList.toggle('sel',x===b));
+  newDrill();
+}));
 document.querySelectorAll('[data-range]').forEach(b=>b.addEventListener('click',()=>{
-  DS.range=b.dataset.range; document.querySelectorAll('[data-range]').forEach(x=>x.classList.toggle('sel',x===b)); newDrill();}));
+  DS.range=b.dataset.range;
+  document.querySelectorAll('[data-range]').forEach(x=>x.classList.toggle('sel',x===b));
+  newDrill();
+}));
 document.querySelectorAll('[data-timer]').forEach(b=>b.addEventListener('click',()=>{
-  DS.timerMode=b.dataset.timer; document.querySelectorAll('[data-timer]').forEach(x=>x.classList.toggle('sel',x===b));
-  if(DS.timerMode!=='off') startDrillTimer(); else clearDrillTimer();}));
+  DS.timerMode=b.dataset.timer;
+  document.querySelectorAll('[data-timer]').forEach(x=>x.classList.toggle('sel',x===b));
+  if(DS.timerMode!=='off') startDrillTimer(); else clearDrillTimer();
+}));
 
 /* ══════════════════════════════════════════════════════════
    VOCAB QUIZ
@@ -1373,17 +1543,30 @@ const QUIZ=[
 ];
 
 const TOPICS=[...new Set(QUIZ.map(q=>q.t))];
-const QS={order:[],idx:0,score:0,streak:0,correct:0,locked:false,topicFilter:new Set(TOPICS)};
+const QS={
+  order:[],
+  idx:0,
+  score:0,
+  streak:0,
+  correct:0,
+  locked:false,
+  topicFilter:new Set(TOPICS),
+  results:[]
+};
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a; }
 
 function buildTopicFilter(){
-  const el=document.getElementById('topic-filter'); el.innerHTML='';
+  const el=document.getElementById('topic-filter');
+  el.innerHTML='';
   TOPICS.forEach(t=>{
-    const b=document.createElement('button'); b.className='diff-btn sel'; b.textContent=t;
+    const b=document.createElement('button');
+    b.className='diff-btn sel';
+    b.textContent=t;
     b.addEventListener('click',()=>{
       if(QS.topicFilter.has(t)&&QS.topicFilter.size>1) QS.topicFilter.delete(t);
       else QS.topicFilter.add(t);
-      b.classList.toggle('sel',QS.topicFilter.has(t)); quizReset();
+      b.classList.toggle('sel',QS.topicFilter.has(t));
+      quizReset();
     });
     el.appendChild(b);
   });
@@ -1392,59 +1575,113 @@ function buildTopicFilter(){
 function quizReset(){
   const filtered=QUIZ.map((q,i)=>({q,i})).filter(({q})=>QS.topicFilter.has(q.t));
   QS.order=shuffle(filtered.map(x=>x.i));
-  QS.idx=0; QS.score=0; QS.streak=0; QS.correct=0;
-  ['q-score','q-streak','q-correct'].forEach(id=>document.getElementById(id).textContent=0);
+  QS.idx=0;
+  QS.score=0;
+  QS.streak=0;
+  QS.correct=0;
+  QS.locked=false;
+  QS.results=[];
+  document.getElementById('q-score').textContent=0;
+  document.getElementById('q-streak').textContent=0;
+  document.getElementById('q-correct').textContent=0;
   document.getElementById('q-total').textContent=QS.order.length;
-  buildQProgress(); renderQuiz();
+  buildQProgress();
+  renderQuiz();
 }
-function quizShuffle(){ QS.order=shuffle([...QS.order]); QS.idx=0; buildQProgress(); renderQuiz(); }
+function quizShuffle(){
+  QS.order=shuffle([...QS.order]);
+  QS.idx=0;
+  QS.results=[];
+  buildQProgress();
+  renderQuiz();
+}
 
 function buildQProgress(){
-  const el=document.getElementById('q-prog'); el.innerHTML='';
+  const el=document.getElementById('q-prog');
+  el.innerHTML='';
   QS.order.forEach((_,i)=>{
-    const d=document.createElement('div'); d.className='qp-dot';
-    if(i<QS.idx) d.classList.add('done-ok');
+    const d=document.createElement('div');
+    d.className='qp-dot';
+    if(i<QS.idx){
+      d.classList.add(QS.results[i] ? 'done-ok' : 'done-bad');
+    }
     if(i===QS.idx) d.classList.add('cur');
     el.appendChild(d);
   });
 }
 
 function renderQuiz(){
-  QS.locked=false; document.getElementById('qnext').disabled=true;
-  document.getElementById('q-num').textContent=QS.idx+1;
+  QS.locked=false;
+  document.getElementById('qnext').disabled=true;
+  document.getElementById('q-num').textContent=Math.min(QS.idx+1, QS.order.length || 1);
+
   if(QS.idx>=QS.order.length){
     const pct=QS.order.length>0?Math.round(QS.correct/QS.order.length*100):0;
     document.getElementById('q-prompt').innerHTML=`🎉 Done! <b>${QS.correct}/${QS.order.length}</b> (${pct}%).`;
     document.getElementById('q-choices').innerHTML='';
-    setFB('qfb','ok','🏆','Quiz complete! Click Restart to go again.'); updateQStats(); return;
+    setFB('qfb','ok','🏆','Quiz complete! Click Restart to go again.');
+    updateQStats();
+    buildQProgress();
+    return;
   }
+
   const q=QUIZ[QS.order[QS.idx]];
   document.getElementById('q-prompt').innerHTML=`<span style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.5px;">${q.t}</span><br>${q.p}`;
-  const cc=document.getElementById('q-choices'); cc.innerHTML='';
+  const cc=document.getElementById('q-choices');
+  cc.innerHTML='';
   const shuffled=shuffle(q.ch.map((c,i)=>({c,i})));
   shuffled.forEach(({c,i})=>{
-    const btn=document.createElement('button'); btn.className='choice'; btn.textContent=c;
-    btn.addEventListener('click',()=>pickQuiz(i,btn,shuffled)); cc.appendChild(btn);
+    const btn=document.createElement('button');
+    btn.className='choice';
+    btn.textContent=c;
+    btn.addEventListener('click',()=>pickQuiz(i,btn,shuffled));
+    cc.appendChild(btn);
   });
-  setFB('qfb','empty','📖','Choose the best answer.'); buildQProgress(); updateQStats();
+  setFB('qfb','empty','📖','Choose the best answer.');
+  buildQProgress();
+  updateQStats();
 }
 
 function pickQuiz(idx,clickedBtn,shuffled){
-  if(QS.locked) return; QS.locked=true;
-  const q=QUIZ[QS.order[QS.idx]]; const correct=idx===q.a;
+  if(QS.locked) return;
+  QS.locked=true;
+  const q=QUIZ[QS.order[QS.idx]];
+  const correct=idx===q.a;
+  QS.results[QS.idx] = correct;
+
   document.querySelectorAll('#q-choices .choice').forEach((b,bi)=>{
     if(shuffled[bi].i===q.a) b.classList.add('correct');
-    if(!correct&&b===clickedBtn) b.classList.add('wrong'); b.disabled=true;
+    if(!correct&&b===clickedBtn) b.classList.add('wrong');
+    b.disabled=true;
   });
-  if(correct){ QS.streak++;QS.correct++;QS.score+=Math.max(5,15-Math.floor(QS.idx*.5));
+
+  if(correct){
+    QS.streak++;
+    QS.correct++;
+    QS.score+=Math.max(5,15-Math.floor(QS.idx*.5));
     setFB('qfb','ok','✅',q.ex);
-  } else { QS.streak=0; setFB('qfb','err','❌',`Incorrect. ${q.ex}`); }
-  ['q-score','q-streak','q-correct'].forEach(id=>document.getElementById(id).textContent=QS[id.replace('q-','')]);
-  document.getElementById('qnext').disabled=false; updateQStats();
+  } else {
+    QS.streak=0;
+    setFB('qfb','err','❌',`Incorrect. ${q.ex}`);
+  }
+
+  document.getElementById('q-score').textContent = QS.score;
+  document.getElementById('q-streak').textContent = QS.streak;
+  document.getElementById('q-correct').textContent = QS.correct;
+  document.getElementById('qnext').disabled=false;
+  buildQProgress();
+  updateQStats();
 }
-function quizNext(){ if(!QS.locked)return; QS.idx++; renderQuiz(); }
+
+function quizNext(){
+  if(!QS.locked) return;
+  QS.idx++;
+  renderQuiz();
+}
 function updateQStats(){
-  const total=QS.order.length,done=QS.idx,pct=done>0?Math.round(QS.correct/done*100):0;
+  const done=QS.results.length;
+  const total=QS.order.length;
+  const pct=done>0?Math.round(QS.correct/done*100):0;
   document.getElementById('q-stats').innerHTML=
     `Questions answered: ${done}/${total}<br>Correct: ${QS.correct}<br>Accuracy: ${pct}%<br>Score: ${QS.score}<br>Streak: ${QS.streak}`;
 }
@@ -1463,15 +1700,22 @@ document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>
 /* ══════════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════════ */
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-AS.done  = JSON.parse(localStorage.getItem('mm_done')  || '[]');
-AS.score = parseInt(localStorage.getItem('mm_score')   || '0');
-AS.levels = buildLevels();
-loadLevel(0);
-buildTopicFilter();
-quizReset();
-requestAnimationFrame(render);
+function initGame(){
+  resizeCanvas();
+  updateCanvasLoadingUI();
+  window.addEventListener('resize', resizeCanvas);
+
+  AS.done  = JSON.parse(localStorage.getItem('mm_done') || '[]');
+  AS.score = parseInt(localStorage.getItem('mm_score') || '0', 10);
+  AS.levels = buildLevels();
+
+  loadLevel(0);
+  buildTopicFilter();
+  quizReset();
+  requestAnimationFrame(render);
+}
+
+initGame();
 </script>
 </body>
 </html>
