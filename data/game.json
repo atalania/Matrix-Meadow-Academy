@@ -1,0 +1,16 @@
+{
+  "game-id": "matrix-meadow",
+  "title": "Matrix Meadow Academy",
+  "subject": "Mathematics",
+  "description":
+    "Practice matrix multiplication through interactive monster scaling challenges and AI-assisted feedback.",
+  "longDescription": [
+    "Matrix Meadow Academy turns matrix multiplication into a visual monster-scaling challenge where students learn by transforming creatures directly on screen. Instead of solving problems in isolation, players apply matrices to match target shapes, making abstract linear algebra feel more concrete and intuitive.",
+    "The game focuses on core ideas like scaling transformations, matrix structure, and the relationship between numerical input and visual output. By tying each problem to an immediate visual result, students can better understand how matrix multiplication changes size and form rather than treating it as pure symbol manipulation.",
+    "AI-assisted feedback supports the learning process by helping players understand why a transformation worked or failed, reinforcing pattern recognition and encouraging correction through guided practice."
+  ],
+  "tags": ["math", "linear-algebra", "matrices", "transformations", "ai"],
+  "embedHeight": "800px",
+  "featured": true,
+  "version": "1.0.0"
+}
