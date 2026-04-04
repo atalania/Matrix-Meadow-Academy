@@ -7,6 +7,7 @@ import { M2, lerpMatrix } from './math-engine.js';
 import { buildLevels } from './levels.js';
 import { drawMonsterPNG, drawFallbackMonster, drawGrid, getImgState, onMonsterReady } from './monster-renderer.js';
 import { setFeedback, parseInputValue, spawnConfetti, clearConfetti } from './ui.js';
+import { askTutor } from './tutor.js';
 import { bridge } from './assistant-bridge.js';
 
 // ---------------------------------------------------------------------------
@@ -333,29 +334,22 @@ async function submitToTutor() {
   const submitBtn = document.getElementById('tm-submit');
   if (submitBtn) submitBtn.disabled = true;
 
-  const API_BASE = 'https://matrix-meadow-academy.onrender.com';
-
   try {
-    const res = await fetch(`${API_BASE}/api/tutor`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        level_title: lv.title,
-        level_concept: lv.formulaRef,
-        tutor_question: lv.tutorQ,
-        student_answer: answer,
-        attempts: state.attempts,
-      }),
+    const reply = await askTutor({
+      level_title: lv.title,
+      level_concept: lv.formulaRef,
+      tutor_question: lv.tutorQ,
+      student_answer: answer,
+      attempts: state.attempts,
     });
-    const data = await res.json();
     if (resp) {
       resp.className = 'tutor-response show';
-      resp.textContent = data.response || 'The tutor is unavailable right now. Keep exploring!';
+      resp.textContent = reply;
     }
   } catch {
     if (resp) {
       resp.className = 'tutor-response show';
-      resp.textContent = 'Could not reach the tutor server. Check that your backend is running.';
+      resp.textContent = 'The tutor is unavailable right now. Keep exploring!';
     }
   }
 
