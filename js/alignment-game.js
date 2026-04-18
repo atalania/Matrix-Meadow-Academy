@@ -5,6 +5,7 @@
 
 import { M2, lerpMatrix } from './math-engine.js';
 import { buildLevels } from './levels.js';
+import { checkAnswer, diagnoseMistake } from './alignment-logic.js';
 import { drawMonsterPNG, drawFallbackMonster, drawGrid, getImgState, onMonsterReady } from './monster-renderer.js';
 import { setFeedback, parseInputValue, spawnConfetti, clearConfetti } from './ui.js';
 import { askTutor } from './tutor.js';
@@ -227,37 +228,6 @@ function applyMatrix() {
       updateStats();
     }
   });
-}
-
-/** Try to identify what kind of mistake the student made */
-function diagnoseMistake(M, lv) {
-  const T = lv.target;
-
-  // Swapped diagonal and off-diagonal
-  if (Math.abs(M.a - T.d) < 0.01 && Math.abs(M.d - T.a) < 0.01) return 'row_col_swap';
-
-  // Got the right values but in wrong positions
-  const playerVals = [M.a, M.b, M.c, M.d].sort();
-  const targetVals = [T.a, T.b, T.c, T.d].sort();
-  if (playerVals.every((v, i) => Math.abs(v - targetVals[i]) < 0.01)) return 'element_placed_wrong_position';
-
-  // Correct diagonal but wrong off-diagonal
-  if (Math.abs(M.a - T.a) < 0.01 && Math.abs(M.d - T.d) < 0.01) return 'wrong_off_diagonal';
-
-  // Wrong sign (negation error)
-  if (M.eq(new M2(-T.a, -T.b, -T.c, -T.d), 0.01) ||
-      M.eq(new M2(T.a, -T.b, -T.c, T.d), 0.01)) return 'sign_error';
-
-  // Close but slightly off (arithmetic error)
-  if (Math.abs(M.a - T.a) < 1 && Math.abs(M.b - T.b) < 1 &&
-      Math.abs(M.c - T.c) < 1 && Math.abs(M.d - T.d) < 1) return 'arithmetic_error';
-
-  return 'general_mistake';
-}
-
-function checkAnswer(M, lv) {
-  if (lv.validate === 'det6') return Math.abs(M.det() - 6) < 0.05;
-  return M.eq(lv.target, 0.01);
 }
 
 function previewMatrix() {

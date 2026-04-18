@@ -1,0 +1,412 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for levels.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="prettify.css" />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="index.html">All files</a> levels.js</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>110/110</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>1/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>1/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>110/110</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span></td><td class="text"><pre class="prettyprint lang-js">// ============================================================================
+// js/levels.js
+// All 9 alignment level definitions. Data only — no game logic.
+// ============================================================================
+&nbsp;
+import { M2 } from './math-engine.js';
+&nbsp;
+export function buildLevels() {
+  return [
+    {
+      title: 'Level 1: Uniform Scaling',
+      desc: 'Your monster needs to match the target shape. The target is twice as big in every direction.',
+      obj: 'Find the 2×2 matrix that scales the monster uniformly by a factor of 2.',
+      target: new M2(2, 0, 0, 2),
+      validate: 'exact',
+      concept: 'matrix_uniform_scaling',
+      teach: `A 2×2 matrix transforms every point (x, y) in a shape using this rule:\n\n  new_x = a·x + b·y\n  new_y = c·x + d·y\n\nA "scaling" matrix only uses the diagonal — b and c stay 0. This means x and y transform independently: new_x = a·x and new_y = d·y.\n\nFor uniform scaling (same in all directions), think: what single number, when you multiply any coordinate by it, doubles the distance from the center?\n\nTry experimenting: click Preview to see what your current matrix does to the monster before committing.`,
+      formulaRef: `Uniform scale: [s  0]\n               [0  s]\n(x,y) → (sx, sy)\ndet = s²  (area scales by s²)`,
+      tutorQ: 'In your own words, what does the diagonal of a scaling matrix control? What would happen to the monster if the scale factor were 0.5 instead of 2?',
+    },
+    {
+      title: 'Level 2: Non-Uniform Scaling',
+      desc: 'This time the target has been stretched differently on each axis. Look closely at the shape.',
+      obj: 'Find the matrix that scales x by 3 and y by 0.5.',
+      target: new M2(3, 0, 0, 0.5),
+      validate: 'exact',
+      concept: 'matrix_nonuniform_scaling',
+      teach: `When the two diagonal entries are different, each axis stretches independently:\n\n  new_x = a·x   (a controls horizontal stretch)\n  new_y = d·y   (d controls vertical stretch)\n\nThe off-diagonal entries b and c remain 0 for a pure scaling.\n\nLook at the target shape on the canvas — how does it compare to the starting monster? Is it wider or narrower? Taller or shorter? Those observations tell you whether a &gt; 1 or a &lt; 1, and whether d &gt; 1 or d &lt; 1.\n\nThe determinant (a × d) tells you the total area change.`,
+      formulaRef: `Non-uniform scale: [a  0]\n                       [0  d]\n(x,y) → (ax, dy)\ndet = a·d`,
+      tutorQ: 'How does stretching by different factors on each axis differ geometrically from uniform scaling? If a circle were transformed this way, what shape would it become?',
+    },
+    {
+      title: 'Level 3: The Identity Matrix',
+      desc: 'The monster and the target are identical. No transformation needed — but you still have to write a matrix.',
+      obj: 'Enter the matrix that leaves every point exactly where it is.',
+      target: new M2(1, 0, 0, 1),
+      validate: 'exact',
+      concept: 'identity_matrix',
+      teach: `In regular arithmetic, multiplying by 1 changes nothing: 5 × 1 = 5. Matrix algebra has the exact same concept — a matrix that, when applied, leaves every point untouched.\n\nThis matrix has a specific name and a specific structure. Think about what values would make:\n\n  new_x = ?·x + ?·y = x    (x unchanged)\n  new_y = ?·x + ?·y = y    (y unchanged)\n\nWhat does each entry need to be for these equations to work out?`,
+      formulaRef: `Identity: [1  0]\n             [0  1]\nM·I = I·M = M  for any M\ndet(I) = 1`,
+      tutorQ: 'Why is this called the "identity" matrix? How does it relate to the number 1 in ordinary multiplication? Can you think of a situation where knowing this matrix is useful?',
+    },
+    {
+      title: 'Level 4: Shear Transformation',
+      desc: 'The target has been slanted sideways. This is called a shear — and it uses the off-diagonal entries.',
+      obj: 'Apply a horizontal shear: the top-right entry should be 1.5, diagonal entries stay 1.',
+      target: new M2(1, 1.5, 0, 1),
+      validate: 'exact',
+      concept: 'shear_transformation',
+      teach: `So far we've only used the diagonal. Now meet the off-diagonal entries.\n\nA horizontal shear uses the top-right entry (b):\n  new_x = x + b·y\n  new_y = y\n\nNotice: the y-coordinate never changes. Only x shifts, and by an amount that depends on how far up (y) the point is. Imagine pushing the top of a stack of cards sideways — the bottom stays still, the top moves most.\n\nThe diagonal entries stay at 1 for a pure shear. And here's a surprising fact: calculate the determinant of a shear matrix. What do you notice?`,
+      formulaRef: `Horizontal shear: [1  k]\n                     [0  1]\n(x,y) → (x+ky, y)\ndet = 1  (area preserved!)`,
+      tutorQ: 'A shear does not change the area of a shape, even though it distorts it. Why is that? Can you explain geometrically why the area stays the same?',
+    },
+    {
+      title: 'Level 5: Rotation 90°',
+      desc: 'The target monster has been rotated. Rotation matrices use cosine and sine of the angle.',
+      obj: 'Rotate the monster exactly 90° counter-clockwise.',
+      target: new M2(0, -1, 1, 0),
+      validate: 'exact',
+      concept: 'rotation_matrix',
+      teach: `A rotation matrix for angle θ (counter-clockwise) looks like this:\n\n  [cos θ   −sin θ]\n  [sin θ    cos θ]\n\nFor this level, you need θ = 90°.\n\nHere's a useful thinking strategy: instead of memorizing, reason from first principles. Ask yourself:\n  • Where does the point (1, 0) go after rotating 90° CCW?\n  • Where does the point (0, 1) go after rotating 90° CCW?\n\nThe COLUMNS of your rotation matrix are those destination points. This works for any rotation — and it's how mathematicians think about all matrix transformations.`,
+      formulaRef: `Rotation by θ: [cos θ  −sin θ]\n               [sin θ   cos θ]\ncos 90° = 0,  sin 90° = 1\ndet = cos²θ + sin²θ = 1`,
+      tutorQ: 'Why does a rotation matrix always have a determinant of 1? What does that tell you about how rotation affects the size and shape of the monster?',
+    },
+    {
+      title: 'Level 6: Matrix Composition',
+      desc: 'Two transformations applied in sequence become one combined matrix — their product.',
+      obj: 'Compose: scale x by 2 first, then apply a horizontal shear of k=1. What is the result?',
+      target: (new M2(1, 1, 0, 1)).mm(new M2(2, 0, 0, 1)),
+      validate: 'exact',
+      concept: 'matrix_composition',
+      teach: `When you apply transformation A followed by transformation B, the combined effect is the matrix product B·A (note the order: B comes first in the product even though A is applied first).\n\nFor this level:\n  A = scale x by 2:   [2  0]\n                       [0  1]\n  B = horizontal shear k=1:  [1  1]\n                              [0  1]\n\nTo find the composition, multiply B·A by hand. Take each entry of the result:\n  result[row][col] = (row of B) · (col of A)\n\nTry working through one entry at a time. The matrix you enter should be the combined single matrix, not A or B separately.`,
+      formulaRef: `Composition: B·A  (A applied first)\n[1 1]·[2 0] = ?\n[0 1] [0 1]\nOrder matters: AB ≠ BA in general`,
+      tutorQ: 'Why does the ORDER of matrix multiplication matter? Give a real-world example where doing two operations in different orders gives a different result.',
+    },
+    {
+      title: 'Level 7: Inverse — Undo!',
+      desc: 'The monster was stretched by a known matrix. The inverse matrix undoes that transformation.',
+      obj: 'The monster was transformed by [4, 0 / 0, 2]. Enter its inverse matrix.',
+      target: (new M2(4, 0, 0, 2)).inv(),
+      validate: 'exact',
+      concept: 'inverse_matrix',
+      teach: `Every invertible transformation has an "undo" button — the inverse matrix M⁻¹.\n\nThe key property: M · M⁻¹ = I (the identity).\n\nFor a diagonal matrix [a, 0 / 0, b], think about it entry by entry:\n  • The top-left entry of M is a. After applying M, the x-coordinate was multiplied by a.\n  • To undo that multiplication, what do you multiply by?\n  • Same logic for the bottom-right entry d.\n\nWhat are 1/4 and 1/2 as decimals? Try entering those. You can verify your answer mentally: if you apply M then M⁻¹, do you get back to the identity?`,
+      formulaRef: `Diagonal inverse: [a  0]⁻¹ = [1/a   0 ]\n               [0  b]       [ 0   1/b]\nCheck: M·M⁻¹ = I\ndet(M⁻¹) = 1/det(M)`,
+      tutorQ: 'If a matrix has a determinant of 0, it has no inverse. Why does that make sense geometrically? What does det=0 mean about what the transformation does to space?',
+    },
+    {
+      title: 'Level 8: Determinant Challenge',
+      desc: 'The determinant measures how much a matrix scales area. There are many valid answers here.',
+      obj: 'Enter any diagonal matrix whose determinant equals exactly 6.',
+      target: new M2(3, 0, 0, 2),
+      validate: 'det6',
+      concept: 'determinant_area',
+      teach: `The determinant of a matrix tells you the area scaling factor. If you apply a matrix to a 1×1 square, the resulting parallelogram has area equal to |det|.\n\nFor a diagonal matrix [a, 0 / 0, b]:\n  det = a × b\n\nThere is no single correct answer here — any pair of numbers that multiply to 6 will work. Think of it like: 6 = 1×6 = 2×3 = 6×1 = (−2)×(−3)...\n\nA few things to consider:\n  • What does a negative determinant mean? (Hint: look at the monster orientation)\n  • What does det &gt; 1 vs det &lt; 1 mean for the monster's size?\n\nTry a few different pairs and use Preview to see what each one does.`,
+      formulaRef: `Diagonal det: [a  0] → det = a·b\n               [0  b]\ndet &gt; 0: orientation preserved\ndet &lt; 0: orientation flipped\n|det| = area scale factor`,
+      tutorQ: 'You found one matrix with det=6. Could you find another one that is NOT diagonal but still has det=6? How would you construct it? What does the determinant tell us beyond just scaling?',
+    },
+    {
+      title: 'Level 9: Reflection',
+      desc: 'A reflection flips the monster across an axis. Unlike rotation, it reverses orientation.',
+      obj: 'Reflect the monster across the x-axis (y coordinate negates, x stays).',
+      target: new M2(1, 0, 0, -1),
+      validate: 'exact',
+      concept: 'reflection_matrix',
+      teach: `A reflection flips a shape across a line. For the x-axis, think about what happens to each point:\n  • A point above the axis moves to the same distance below.\n  • A point below the axis moves to the same distance above.\n  • x is completely unchanged.\n\nSo the transformation sends (x, y) to (x, −y). Write out what that means for each entry of the 2×2 matrix:\n  new_x = ?·x + ?·y = x\n  new_y = ?·x + ?·y = −y\n\nAfter you find the matrix, calculate its determinant. Is it positive or negative? Think about why reflection and rotation give different signs for the determinant.`,
+      formulaRef: `x-axis reflection: [1   0]\n                     [0  −1]\n(x,y) → (x, −y)\ndet = −1  (orientation flips!)`,
+      tutorQ: 'Reflections and rotations both preserve the size and shape of a figure, but their determinants are different (+1 vs −1). What does this difference in sign tell us about orientation? Can you think of a physical analogy?',
+    },
+  ];
+}</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-04-18T01:23:03.223Z
+            </div>
+        <script src="prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="sorter.js"></script>
+        <script src="block-navigation.js"></script>
+    </body>
+</html>
+    
