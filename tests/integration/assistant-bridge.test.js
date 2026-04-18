@@ -37,6 +37,78 @@ describe('assistant-bridge portal handshake', () => {
       expect(msg.payload.mistakeCategory).toBe('arithmetic_error');
       expect(msg.payload.additionalContext).toEqual({ attempts: 2 });
     });
+
+    it('defaults mistakeCategory to general_mistake when omitted', () => {
+      bridge.onIncorrect({
+        levelId: 'level-2',
+        concept: 'x',
+        playerAnswer: 'a',
+        correctAnswer: 'b',
+      });
+      expect(postMessage.mock.calls[0][0].payload.mistakeCategory).toBe('general_mistake');
+    });
+
+    it('posts correct_submission and JSON-stringifies object answers', () => {
+      bridge.onCorrect({
+        levelId: 'level-1',
+        concept: 'c',
+        playerAnswer: { a: 1, b: 2 },
+      });
+      const p = postMessage.mock.calls[0][0].payload;
+      expect(p.eventType).toBe('correct_submission');
+      expect(p.playerAnswer).toBe('{"a":1,"b":2}');
+    });
+
+    it('posts level_complete', () => {
+      bridge.onLevelComplete({ levelId: 'level-3', concept: 'inverse_matrix' });
+      expect(postMessage.mock.calls[0][0].payload.eventType).toBe('level_complete');
+    });
+
+    it('posts timeout with undefined answers when absent', () => {
+      bridge.onTimeout({ levelId: 'level-1', concept: 'c' });
+      const p = postMessage.mock.calls[0][0].payload;
+      expect(p.eventType).toBe('timeout');
+      expect(p.playerAnswer).toBeUndefined();
+      expect(p.correctAnswer).toBeUndefined();
+    });
+
+    it('posts timeout with stringified answers when present', () => {
+      bridge.onTimeout({
+        levelId: 'level-1',
+        concept: 'c',
+        playerAnswer: 42,
+        correctAnswer: { x: 1 },
+      });
+      const p = postMessage.mock.calls[0][0].payload;
+      expect(p.playerAnswer).toBe('42');
+      expect(p.correctAnswer).toBe('[object Object]');
+    });
+
+    it('increments hintCount across hint_request calls', () => {
+      bridge.onHintRequest({ levelId: 'level-1', concept: 'c' });
+      bridge.onHintRequest({ levelId: 'level-1', concept: 'c' });
+      expect(postMessage.mock.calls[0][0].payload.hintCount).toBe(1);
+      expect(postMessage.mock.calls[1][0].payload.hintCount).toBe(2);
+    });
+
+    it('reports rounded elapsed seconds since level start', () => {
+      let t = 1_000_000;
+      vi.spyOn(Date, 'now').mockImplementation(() => t);
+      bridge.onLevelStart('level-1', 'concept');
+      t += 3_500;
+      bridge.onCorrect({ levelId: 'level-1', concept: 'concept', playerAnswer: 'ok' });
+      expect(postMessage.mock.calls[1][0].payload.timeSpentSeconds).toBe(4);
+    });
+
+    it('resetProblem clears hint baseline for the next level start', () => {
+      bridge.onHintRequest({ levelId: 'level-1', concept: 'a' });
+      bridge.resetProblem();
+      bridge.onLevelStart('level-2', 'b');
+      const startPayload = postMessage.mock.calls.find(
+        (c) => c[0].payload.eventType === 'level_start',
+      );
+      expect(startPayload[0].payload.hintCount).toBe(0);
+    });
   });
 
   describe('standalone dev', () => {

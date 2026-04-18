@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { M2, lerpMatrix, seededRng, multiplyMatrices, shuffle } from '../../js/math-engine.js';
+import {
+  M2,
+  lerpMatrix,
+  seededRng,
+  multiplyMatrices,
+  shuffle,
+  randInt,
+  randomMatrix,
+} from '../../js/math-engine.js';
 
 describe('M2', () => {
   it('mv applies 2×2 to vector', () => {
@@ -61,6 +69,44 @@ describe('multiplyMatrices', () => {
     const A = [[1, 2], [3, 4]];
     const B = [[5, 6], [7, 8]];
     expect(multiplyMatrices(A, B)).toEqual([[19, 22], [43, 50]]);
+  });
+});
+
+describe('randInt', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns min when random draws zero', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    expect(randInt(7, 12)).toBe(7);
+  });
+
+  it('returns max when random is just below one', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.999999);
+    expect(randInt(7, 12)).toBe(12);
+  });
+});
+
+describe('randomMatrix', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('builds N×N entries in [-range, range] from randInt', () => {
+    let k = 0;
+    const seq = [0, 0.99, 0.5, 0, 0.1];
+    vi.spyOn(Math, 'random').mockImplementation(() => seq[k++ % seq.length]);
+    const M = randomMatrix(2, 3);
+    expect(M).toHaveLength(2);
+    expect(M[0]).toHaveLength(2);
+    for (const row of M) {
+      for (const v of row) {
+        expect(v).toBeGreaterThanOrEqual(-3);
+        expect(v).toBeLessThanOrEqual(3);
+        expect(Number.isInteger(v)).toBe(true);
+      }
+    }
   });
 });
 

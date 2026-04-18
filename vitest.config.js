@@ -8,7 +8,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       reportsDirectory: 'coverage',
-      include: ['js/math-engine.js', 'js/alignment-logic.js', 'js/assistant-bridge.js'],
+      include: [
+        'js/math-engine.js',
+        'js/alignment-logic.js',
+        'js/assistant-bridge.js',
+        'js/levels.js',
+      ],
     },
   },
 });
