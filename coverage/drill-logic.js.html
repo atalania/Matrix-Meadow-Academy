@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for alignment-logic.js</title>
+    <title>Code coverage report for drill-logic.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="prettify.css" />
     <link rel="stylesheet" href="base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="index.html">All files</a> alignment-logic.js</h1>
+        <h1><a href="index.html">All files</a> drill-logic.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>32/32</span>
+                <span class='fraction'>31/31</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">61.11% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>11/18</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>32/32</span>
+                <span class='fraction'>31/31</span>
             </div>
         
             
@@ -94,11 +94,7 @@
 <a name='L29'></a><a href='#L29'>29</a>
 <a name='L30'></a><a href='#L30'>30</a>
 <a name='L31'></a><a href='#L31'>31</a>
-<a name='L32'></a><a href='#L32'>32</a>
-<a name='L33'></a><a href='#L33'>33</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<a name='L32'></a><a href='#L32'>32</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -106,58 +102,59 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// ============================================================================
-// js/alignment-logic.js
-// Pure answer validation and mistake tagging (no DOM).
+// js/drill-logic.js
+// Pure drill helpers — range bounds, cell parsing, grading (no DOM).
 // ============================================================================
 &nbsp;
-import { M2 } from './math-engine.js';
-&nbsp;
-/** Try to identify what kind of mistake the student made */
-export function diagnoseMistake(M, lv) {
-  const T = lv.target;
-&nbsp;
-  if (Math.abs(M.a - T.d) &lt; 0.01 <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp; Math.abs(M.d - T.a) &lt; 0.01)</span> <span class="branch-0 cbranch-no" title="branch not covered" >return 'row_col_swap';</span>
-&nbsp;
-  const playerVals = [M.a, M.b, M.c, M.d].sort();
-  const targetVals = [T.a, T.b, T.c, T.d].sort();
-  if (playerVals.every((v, i) =&gt; Math.abs(v - targetVals[i]) &lt; 0.01)) return 'element_placed_wrong_position';
-&nbsp;
-  if (Math.abs(M.a - T.a) &lt; 0.01 &amp;&amp; Math.abs(M.d - T.d) &lt; 0.01) return 'wrong_off_diagonal';
-&nbsp;
-  if (M.eq(new M2(-T.a, -T.b, -T.c, -T.d), 0.01) ||
-      M.eq(new M2(T.a, -T.b, -T.c, T.d), 0.01)) <span class="branch-0 cbranch-no" title="branch not covered" >return 'sign_error';</span>
-&nbsp;
-  if (Math.abs(M.a - T.a) &lt; 1 <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp; Math.abs(M.b - T.b) &lt; 1 <span class="branch-0 cbranch-no" title="branch not covered" ></span>&amp;&amp;</span>
-      Math.abs(M.c - T.c) &lt; 1 <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp; Math.abs(M.d - T.d) &lt; 1)</span> <span class="branch-0 cbranch-no" title="branch not covered" >return 'arithmetic_error';</span>
-&nbsp;
-  return 'general_mistake';
+export function drillRangeNumber(range) {
+  if (range === 'easy') return 3;
+  if (range === 'med') return 6;
+  return 9;
 }
 &nbsp;
-export function checkAnswer(M, lv) {
-  if (lv.validate === 'det6') return Math.abs(M.det() - 6) &lt; 0.05;
-  return M.eq(lv.target, 0.01);
+/** Parse one grid cell; null if empty or not a plain integer string */
+export function parseDrillIntegerCell(raw) {
+  const t = String(raw).trim();
+  if (t === '' || !/^-?\d+$/.test(t)) return null;
+  return Number(t);
+}
+&nbsp;
+export function gradeDrillMatrices(user, expected) {
+  const n = expected.length;
+  let correct = 0;
+  const wrongEntries = [];
+  for (let r = 0; r &lt; n; r++) {
+    for (let c = 0; c &lt; n; c++) {
+      if (user[r][c] === expected[r][c]) correct++;
+      else wrongEntries.push(`C[${r}][${c}]: got ${user[r][c]}, expected ${expected[r][c]}`);
+    }
+  }
+  const total = n * n;
+  return { correct, total, allOk: correct === total, wrongEntries };
 }
 &nbsp;</pre></td></tr></table></pre>
 

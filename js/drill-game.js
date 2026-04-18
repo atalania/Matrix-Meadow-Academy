@@ -6,6 +6,7 @@
 import { randomMatrix, multiplyMatrices } from './math-engine.js';
 import { setFeedback, matrixToTable } from './ui.js';
 import { bridge } from './assistant-bridge.js';
+import { drillRangeNumber, parseDrillIntegerCell, gradeDrillMatrices } from './drill-logic.js';
 
 // ---------------------------------------------------------------------------
 // State
@@ -21,7 +22,6 @@ const state = {
   timerHandle: null,
 };
 
-function rangeNum(r) { return r === 'easy' ? 3 : r === 'med' ? 6 : 9; }
 function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 
 // ---------------------------------------------------------------------------
@@ -29,7 +29,7 @@ function setText(id, v) { const el = document.getElementById(id); if (el) el.tex
 // ---------------------------------------------------------------------------
 
 function newDrill() {
-  const r = rangeNum(state.range);
+  const r = drillRangeNumber(state.range);
   state.A = randomMatrix(state.size, r);
   state.B = randomMatrix(state.size, r);
   state.C = multiplyMatrices(state.A, state.B);
@@ -110,9 +110,9 @@ function readAnswer() {
   const out = Array.from({ length: n }, () => Array(n).fill(null));
 
   for (const inp of el.querySelectorAll('input.dinput')) {
-    const raw = inp.value.trim();
-    if (raw === '' || !/^-?\d+$/.test(raw)) return null;
-    out[+inp.dataset.r][+inp.dataset.c] = Number(raw);
+    const v = parseDrillIntegerCell(inp.value);
+    if (v === null) return null;
+    out[+inp.dataset.r][+inp.dataset.c] = v;
   }
   return out;
 }
@@ -127,7 +127,7 @@ function drillCheck() {
 
   const n = state.size;
   const el = document.getElementById('drill-answer');
-  let correct = 0;
+  const { correct, total, allOk, wrongEntries } = gradeDrillMatrices(user, state.C);
 
   for (let r = 0; r < n; r++) {
     for (let c = 0; c < n; c++) {
@@ -135,12 +135,8 @@ function drillCheck() {
       const pass = user[r][c] === state.C[r][c];
       inp.classList.toggle('correct', pass);
       inp.classList.toggle('wrong', !pass);
-      if (pass) correct++;
     }
   }
-
-  const total = n * n;
-  const allOk = correct === total;
 
   if (allOk) {
     clearTimer();
@@ -158,13 +154,6 @@ function drillCheck() {
     state.streak = 0;
     state.score -= 3;
     setFeedback('dfb', 'err', '❌', `${correct}/${total} correct. −3 pts.`);
-
-    // Diagnose which entries were wrong
-    const wrongEntries = [];
-    for (let r = 0; r < n; r++)
-      for (let c = 0; c < n; c++)
-        if (user[r][c] !== state.C[r][c])
-          wrongEntries.push(`C[${r}][${c}]: got ${user[r][c]}, expected ${state.C[r][c]}`);
 
     bridge.onIncorrect({
       levelId: `drill-${state.size}x${state.size}`,

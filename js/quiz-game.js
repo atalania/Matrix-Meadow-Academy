@@ -6,6 +6,12 @@
 import { shuffle } from './math-engine.js';
 import { setFeedback } from './ui.js';
 import { bridge } from './assistant-bridge.js';
+import {
+  quizAnswerIsCorrect,
+  quizScoreIncrementForCorrect,
+  quizCompletionPercent,
+  quizRunningAccuracyPercent,
+} from './quiz-logic.js';
 
 // ---------------------------------------------------------------------------
 // Question bank
@@ -120,7 +126,7 @@ function renderQuestion() {
 
   // Quiz complete
   if (state.idx >= state.order.length) {
-    const pct = state.order.length > 0 ? Math.round(state.correct / state.order.length * 100) : 0;
+    const pct = quizCompletionPercent(state.correct, state.order.length);
     const promptEl = document.getElementById('q-prompt');
     if (promptEl) promptEl.innerHTML = `🎉 Done! <b>${state.correct}/${state.order.length}</b> (${pct}%).`;
     const choicesEl = document.getElementById('q-choices');
@@ -163,7 +169,7 @@ function pickAnswer(idx, clickedBtn, shuffled) {
   state.locked = true;
 
   const q = QUIZ[state.order[state.idx]];
-  const correct = idx === q.a;
+  const correct = quizAnswerIsCorrect(idx, q.a);
   state.results[state.idx] = correct;
 
   // Highlight correct/wrong
@@ -176,7 +182,7 @@ function pickAnswer(idx, clickedBtn, shuffled) {
   if (correct) {
     state.streak++;
     state.correct++;
-    state.score += Math.max(5, 15 - Math.floor(state.idx * 0.5));
+    state.score += quizScoreIncrementForCorrect(state.idx);
     setFeedback('qfb', 'ok', '✅', q.ex);
 
     bridge.onCorrect({
@@ -215,7 +221,7 @@ function quizNext() {
 function updateStats() {
   const done = state.results.length;
   const total = state.order.length;
-  const pct = done > 0 ? Math.round(state.correct / done * 100) : 0;
+  const pct = quizRunningAccuracyPercent(state.correct, done);
   const el = document.getElementById('q-stats');
   if (el) {
     el.innerHTML = `Questions answered: ${done}/${total}<br>Correct: ${state.correct}<br>Accuracy: ${pct}%<br>Score: ${state.score}<br>Streak: ${state.streak}`;

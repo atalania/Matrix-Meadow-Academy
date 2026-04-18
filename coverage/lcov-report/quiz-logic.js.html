@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for alignment-logic.js</title>
+    <title>Code coverage report for quiz-logic.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="prettify.css" />
     <link rel="stylesheet" href="base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="index.html">All files</a> alignment-logic.js</h1>
+        <h1><a href="index.html">All files</a> quiz-logic.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>32/32</span>
+                <span class='fraction'>22/22</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">61.11% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>11/18</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>32/32</span>
+                <span class='fraction'>22/22</span>
             </div>
         
             
@@ -85,79 +85,49 @@
 <a name='L20'></a><a href='#L20'>20</a>
 <a name='L21'></a><a href='#L21'>21</a>
 <a name='L22'></a><a href='#L22'>22</a>
-<a name='L23'></a><a href='#L23'>23</a>
-<a name='L24'></a><a href='#L24'>24</a>
-<a name='L25'></a><a href='#L25'>25</a>
-<a name='L26'></a><a href='#L26'>26</a>
-<a name='L27'></a><a href='#L27'>27</a>
-<a name='L28'></a><a href='#L28'>28</a>
-<a name='L29'></a><a href='#L29'>29</a>
-<a name='L30'></a><a href='#L30'>30</a>
-<a name='L31'></a><a href='#L31'>31</a>
-<a name='L32'></a><a href='#L32'>32</a>
-<a name='L33'></a><a href='#L33'>33</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L23'></a><a href='#L23'>23</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// ============================================================================
-// js/alignment-logic.js
-// Pure answer validation and mistake tagging (no DOM).
+// js/quiz-logic.js
+// Pure scoring / correctness for the vocab quiz (no DOM).
 // ============================================================================
 &nbsp;
-import { M2 } from './math-engine.js';
-&nbsp;
-/** Try to identify what kind of mistake the student made */
-export function diagnoseMistake(M, lv) {
-  const T = lv.target;
-&nbsp;
-  if (Math.abs(M.a - T.d) &lt; 0.01 <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp; Math.abs(M.d - T.a) &lt; 0.01)</span> <span class="branch-0 cbranch-no" title="branch not covered" >return 'row_col_swap';</span>
-&nbsp;
-  const playerVals = [M.a, M.b, M.c, M.d].sort();
-  const targetVals = [T.a, T.b, T.c, T.d].sort();
-  if (playerVals.every((v, i) =&gt; Math.abs(v - targetVals[i]) &lt; 0.01)) return 'element_placed_wrong_position';
-&nbsp;
-  if (Math.abs(M.a - T.a) &lt; 0.01 &amp;&amp; Math.abs(M.d - T.d) &lt; 0.01) return 'wrong_off_diagonal';
-&nbsp;
-  if (M.eq(new M2(-T.a, -T.b, -T.c, -T.d), 0.01) ||
-      M.eq(new M2(T.a, -T.b, -T.c, T.d), 0.01)) <span class="branch-0 cbranch-no" title="branch not covered" >return 'sign_error';</span>
-&nbsp;
-  if (Math.abs(M.a - T.a) &lt; 1 <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp; Math.abs(M.b - T.b) &lt; 1 <span class="branch-0 cbranch-no" title="branch not covered" ></span>&amp;&amp;</span>
-      Math.abs(M.c - T.c) &lt; 1 <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp; Math.abs(M.d - T.d) &lt; 1)</span> <span class="branch-0 cbranch-no" title="branch not covered" >return 'arithmetic_error';</span>
-&nbsp;
-  return 'general_mistake';
+export function quizAnswerIsCorrect(choiceOriginalIndex, answerIndex) {
+  return choiceOriginalIndex === answerIndex;
 }
 &nbsp;
-export function checkAnswer(M, lv) {
-  if (lv.validate === 'det6') return Math.abs(M.det() - 6) &lt; 0.05;
-  return M.eq(lv.target, 0.01);
+/** Points awarded for a correct answer at this zero-based position in the run */
+export function quizScoreIncrementForCorrect(zeroBasedQuestionIndex) {
+  return Math.max(5, 15 - Math.floor(zeroBasedQuestionIndex * 0.5));
+}
+&nbsp;
+export function quizCompletionPercent(correct, total) {
+  return total &gt; 0 ? Math.round((correct / total) * 100) : 0;
+}
+&nbsp;
+/** Accuracy over questions answered so far (may differ from final completion %) */
+export function quizRunningAccuracyPercent(correct, answered) {
+  return answered &gt; 0 ? Math.round((correct / answered) * 100) : 0;
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -166,7 +136,7 @@ export function checkAnswer(M, lv) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-18T01:23:03.196Z
+                at 2026-04-18T01:23:03.223Z
             </div>
         <script src="prettify.js"></script>
         <script>
