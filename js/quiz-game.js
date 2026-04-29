@@ -101,6 +101,16 @@ function quizShuffle() {
   state.order = shuffle([...state.order]);
   state.idx = 0;
   state.results = [];
+  // Restart the run cleanly — keep the topic/order subset chosen by the
+  // user but reset all derived counters so the chip/stat displays match
+  // the now-empty progress dots.
+  state.score = 0;
+  state.streak = 0;
+  state.correct = 0;
+  state.locked = false;
+  setText('q-score', 0);
+  setText('q-streak', 0);
+  setText('q-correct', 0);
   buildProgress();
   renderQuestion();
 }
@@ -170,7 +180,10 @@ function pickAnswer(idx, clickedBtn, shuffled) {
 
   const q = QUIZ[state.order[state.idx]];
   const correct = quizAnswerIsCorrect(idx, q.a);
-  state.results[state.idx] = correct;
+  // Append rather than indexed-assign: the current quiz flow always answers
+  // questions in order, so push() keeps `results` dense and avoids the
+  // "skipped slots show as wrong" pitfall of sparse arrays.
+  state.results.push(correct);
 
   // Highlight correct/wrong
   document.querySelectorAll('#q-choices .choice').forEach((b, bi) => {

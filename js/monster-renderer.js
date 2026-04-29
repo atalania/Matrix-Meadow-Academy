@@ -9,7 +9,23 @@ import { M2, seededRng } from './math-engine.js';
 // Configuration
 // ---------------------------------------------------------------------------
 
-const MONSTER_IMAGE_URL = './monster.png';
+// Resolve `monster.png` against Vite's configured base URL when possible so
+// the image still loads when the app is mounted at a non-root path (e.g.
+// `/staticGames/matrix-meadow/`). Falls back to a document-relative URL.
+function resolveMonsterUrl() {
+  try {
+    const base =
+      (typeof import.meta !== 'undefined' &&
+       import.meta.env &&
+       import.meta.env.BASE_URL) || './';
+    const sep = base.endsWith('/') ? '' : '/';
+    return base + sep + 'monster.png';
+  } catch {
+    return './monster.png';
+  }
+}
+
+const MONSTER_IMAGE_URL = resolveMonsterUrl();
 const IMG_HALF = 88;
 const EMOJI = ['🐱','🐭','🐸','🦊','🐼','🐨','🦁','🐯','🐻','🦄'];
 const COLORS = [

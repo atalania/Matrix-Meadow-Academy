@@ -37,6 +37,49 @@ const state = {
 };
 
 // ---------------------------------------------------------------------------
+// Persistence helpers — never throw on corrupt localStorage
+// ---------------------------------------------------------------------------
+
+const STORAGE_KEY = 'mm_state_v1';
+
+function loadPersistedState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed;
+  } catch (e) {
+    console.warn('Failed to parse saved progress; starting fresh.', e);
+    return null;
+  }
+}
+
+function persistState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      done: state.done,
+      score: state.score,
+      bestStreak: state.bestStreak,
+      totalAttempts: state.totalAttempts,
+      totalCorrect: state.totalCorrect,
+    }));
+  } catch (e) {
+    console.warn('Failed to save progress.', e);
+  }
+}
+
+function safeInt(v, fallback = 0) {
+  const n = typeof v === 'number' ? v : parseInt(v, 10);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function safeIntArray(v) {
+  if (!Array.isArray(v)) return [];
+  return v.filter((x) => Number.isInteger(x) && x >= 0);
+}
+
+// ---------------------------------------------------------------------------
 // Canvas setup
 // ---------------------------------------------------------------------------
 
@@ -58,12 +101,27 @@ function resizeCanvas() {
 // Animation
 // ---------------------------------------------------------------------------
 
+function isAnimating() {
+  return state.animT < 1;
+}
+
+function setActionButtonsDisabled(disabled) {
+  ['btn-apply', 'btn-preview', 'btn-reset'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = disabled;
+  });
+}
+
 function triggerAnimation(to, cb) {
   state.animFrom = state.curMat;
   state.animTo = to;
   state.animT = 0;
   state.animStart = performance.now();
   state.animCB = cb;
+  // Disable user actions while the animation plays so callbacks (scoring,
+  // feedback, modal display) can't be silently overwritten by a second
+  // Apply/Preview click landing mid-animation.
+  setActionButtonsDisabled(true);
 }
 
 function render(ts) {
@@ -79,10 +137,13 @@ function render(ts) {
   if (state.animT < 1) {
     state.animT = Math.min(1, (ts - state.animStart) / state.animDur);
     state.curMat = lerpMatrix(state.animFrom, state.animTo, state.animT);
-    if (state.animT >= 1 && state.animCB) {
-      const cb = state.animCB;
-      state.animCB = null;
-      cb();
+    if (state.animT >= 1) {
+      setActionButtonsDisabled(false);
+      if (state.animCB) {
+        const cb = state.animCB;
+        state.animCB = null;
+        cb();
+      }
     }
   }
 
@@ -130,6 +191,13 @@ function loadLevel(idx) {
   state.curMat = M2.I();
   state.animT = 1;
   state.animTo = M2.I();
+  state.animFrom = M2.I();
+  // Discard any pending animation callback from the previous level — its
+  // scoring/feedback would target the wrong level.
+  state.animCB = null;
+  // Re-enable the action buttons in case loadLevel was triggered while a
+  // previous animation was still in flight (e.g. clicking a level dot).
+  setActionButtonsDisabled(false);
 
   const lv = state.levels[idx];
   if (!lv) return;
@@ -170,6 +238,10 @@ function setText(id, text) {
 // ---------------------------------------------------------------------------
 
 function applyMatrix() {
+  // Ignore Apply while a previous animation is still in flight; otherwise
+  // its callback (scoring, feedback, modal) gets dropped.
+  if (isAnimating()) return;
+
   const M = getInputMatrix();
   if (!M) {
     setFeedback('afb', 'info', '⚠️', 'Please fill in all four matrix entries first.');
@@ -191,8 +263,7 @@ function applyMatrix() {
       state.score += pts;
 
       if (!state.done.includes(state.lvl)) state.done.push(state.lvl);
-      localStorage.setItem('mm_done', JSON.stringify(state.done));
-      localStorage.setItem('mm_score', state.score);
+      persistState();
 
       setFeedback('afb', 'ok', '🎉', 'Correct! Monster perfectly aligned!');
       updateStats();
@@ -225,22 +296,35 @@ function applyMatrix() {
         extra: { attempts: state.attempts, det: M.det() },
       });
 
+      persistState();
       updateStats();
     }
   });
 }
 
 function previewMatrix() {
+  if (isAnimating()) return;
+
   const M = getInputMatrix();
   if (!M) {
     setFeedback('afb', 'info', '⚠️', 'Please fill in all four matrix entries first.');
     return;
   }
   setFeedback('afb', 'info', '👁', `Preview: det=${M.det().toFixed(3)}. Adjust your values then click Apply.`);
-  triggerAnimation(M, null);
+  // Animate to the previewed shape, then ease back to the identity so the
+  // canvas state isn't permanently mutated by a "preview" action.
+  triggerAnimation(M, () => {
+    setTimeout(() => {
+      // Only auto-revert if no other animation has started in the meantime.
+      if (!isAnimating()) triggerAnimation(M2.I(), null);
+    }, 700);
+  });
 }
 
-function resetLevel() { loadLevel(state.lvl); }
+function resetLevel() {
+  if (isAnimating()) return;
+  loadLevel(state.lvl);
+}
 
 // ---------------------------------------------------------------------------
 // UI updates
@@ -361,9 +445,26 @@ export function initAlignment() {
   canvas = document.getElementById('gc');
   ctx = canvas?.getContext('2d');
 
-  // Restore saved progress
-  state.done = JSON.parse(localStorage.getItem('mm_done') || '[]');
-  state.score = parseInt(localStorage.getItem('mm_score') || '0', 10);
+  // Restore saved progress (with safe defaults). Also migrates from older
+  // schema where `mm_done` and `mm_score` were stored as separate keys.
+  const saved = loadPersistedState();
+  if (saved) {
+    state.done = safeIntArray(saved.done);
+    state.score = safeInt(saved.score);
+    state.bestStreak = safeInt(saved.bestStreak);
+    state.totalAttempts = safeInt(saved.totalAttempts);
+    state.totalCorrect = safeInt(saved.totalCorrect);
+  } else {
+    try {
+      const legacyDone = localStorage.getItem('mm_done');
+      const legacyScore = localStorage.getItem('mm_score');
+      if (legacyDone) state.done = safeIntArray(JSON.parse(legacyDone));
+      if (legacyScore) state.score = safeInt(legacyScore);
+      if (legacyDone || legacyScore) persistState();
+    } catch (e) {
+      console.warn('Failed to migrate legacy progress; starting fresh.', e);
+    }
+  }
   state.levels = buildLevels();
 
   // Canvas

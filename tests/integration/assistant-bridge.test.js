@@ -81,7 +81,9 @@ describe('assistant-bridge portal handshake', () => {
       });
       const p = postMessage.mock.calls[0][0].payload;
       expect(p.playerAnswer).toBe('42');
-      expect(p.correctAnswer).toBe('[object Object]');
+      // Object answers are JSON-stringified rather than coerced via String()
+      // (which would produce the useless literal "[object Object]").
+      expect(p.correctAnswer).toBe('{"x":1}');
     });
 
     it('increments hintCount across hint_request calls', () => {

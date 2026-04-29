@@ -29,6 +29,7 @@ describe('diagnoseMistake', () => {
   const levels = buildLevels();
   const lv1 = levels[0];
   const lv2 = levels[1];
+  const detLevel = levels.find((l) => l.validate === 'det6');
 
   it('tags permutation of correct entries', () => {
     const M = new M2(0, 2, 2, 0);
@@ -43,5 +44,21 @@ describe('diagnoseMistake', () => {
 
   it('falls back to general_mistake when far off', () => {
     expect(diagnoseMistake(new M2(50, 50, 50, 50), lv1)).toBe('general_mistake');
+  });
+
+  it('tags diagonal_swap only when off-diagonals also match', () => {
+    // lv2.target = [3, 0; 0, 0.5] — swap diagonal but keep off-diag at 0.
+    const swap = new M2(0.5, 0, 0, 3);
+    expect(diagnoseMistake(swap, lv2)).toBe('diagonal_swap');
+    // Off-diagonals don't match — should NOT be tagged diagonal_swap.
+    const swapWithOffdiag = new M2(0.5, 9, 9, 3);
+    expect(diagnoseMistake(swapWithOffdiag, lv2)).not.toBe('diagonal_swap');
+  });
+
+  it('uses determinant-based tags for det6 levels', () => {
+    expect(detLevel).toBeDefined();
+    expect(diagnoseMistake(new M2(0, 0, 0, 0), detLevel)).toBe('det_zero');
+    expect(diagnoseMistake(new M2(-3, 0, 0, 2), detLevel)).toBe('det_wrong_sign');
+    expect(diagnoseMistake(new M2(2, 0, 0, 2), detLevel)).toBe('det_value_off');
   });
 });

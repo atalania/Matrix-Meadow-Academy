@@ -37,20 +37,33 @@ let confRAF = null;
 export function spawnConfetti() {
   clearConfetti(); // Prevent stacking — fix for leaked confetti bug
 
+  // Use the *current* viewport width so positions stay in pixels for the
+  // entire animation. Mixing units (vw at spawn, px after the first frame)
+  // causes pieces to collapse to the left edge.
+  const vw = (typeof window !== 'undefined' && window.innerWidth) || 1024;
+
   for (let i = 0; i < 55; i++) {
     const el = document.createElement('div');
     el.className = 'conf';
     const sz = 8 + Math.random() * 9;
+    const startX = Math.random() * vw;
     Object.assign(el.style, {
       width: sz + 'px',
       height: sz + 'px',
       background: CONF_COLORS[Math.floor(Math.random() * CONF_COLORS.length)],
-      left: Math.random() * 100 + 'vw',
+      left: startX + 'px',
       top: '-20px',
       borderRadius: Math.random() > 0.5 ? '50%' : '3px',
     });
     document.body.appendChild(el);
-    confPieces.push({ el, vy: 2 + Math.random() * 4, vx: (Math.random() - 0.5) * 3, g: 0.12, y: -20 });
+    confPieces.push({
+      el,
+      vy: 2 + Math.random() * 4,
+      vx: (Math.random() - 0.5) * 3,
+      g: 0.12,
+      x: startX,
+      y: -20,
+    });
   }
   animateConfetti();
 }
@@ -60,8 +73,9 @@ function animateConfetti() {
   confPieces.forEach(p => {
     p.vy += p.g;
     p.y += p.vy;
+    p.x += p.vx;
     p.el.style.top = p.y + 'px';
-    p.el.style.left = (parseFloat(p.el.style.left) + p.vx) + 'px';
+    p.el.style.left = p.x + 'px';
     if (p.y <= window.innerHeight + 60) allDone = false;
   });
   if (allDone) { clearConfetti(); return; }

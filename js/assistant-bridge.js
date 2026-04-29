@@ -19,6 +19,18 @@ function sendToPortal(payload) {
   window.parent.postMessage({ type: 'ASSISTANT_GAME_EVENT', payload }, '*');
 }
 
+/**
+ * Serialize a player/correct answer for the portal payload.
+ * Returns undefined for null/undefined, the original string for strings,
+ * and a JSON.stringify'd form for any other value (so objects don't end
+ * up as the literal "[object Object]" via implicit coercion).
+ */
+function serializeAnswer(value) {
+  if (value == null) return undefined;
+  if (typeof value === 'string') return value;
+  try { return JSON.stringify(value); } catch { return String(value); }
+}
+
 // ---------------------------------------------------------------------------
 // Public API — called from game modules
 // ---------------------------------------------------------------------------
@@ -45,8 +57,8 @@ export const bridge = {
       gameId: GAME_ID, levelId, eventType: 'incorrect_submission',
       targetConcept: concept,
       mistakeCategory: mistakeCategory || 'general_mistake',
-      playerAnswer: typeof playerAnswer === 'string' ? playerAnswer : JSON.stringify(playerAnswer),
-      correctAnswer: typeof correctAnswer === 'string' ? correctAnswer : JSON.stringify(correctAnswer),
+      playerAnswer: serializeAnswer(playerAnswer),
+      correctAnswer: serializeAnswer(correctAnswer),
       hintCount, timeSpentSeconds: elapsed(),
       additionalContext: extra,
     });
@@ -57,7 +69,7 @@ export const bridge = {
     sendToPortal({
       gameId: GAME_ID, levelId, eventType: 'correct_submission',
       targetConcept: concept,
-      playerAnswer: typeof playerAnswer === 'string' ? playerAnswer : JSON.stringify(playerAnswer),
+      playerAnswer: serializeAnswer(playerAnswer),
       hintCount, timeSpentSeconds: elapsed(),
     });
   },
@@ -75,8 +87,8 @@ export const bridge = {
     sendToPortal({
       gameId: GAME_ID, levelId, eventType: 'timeout',
       targetConcept: concept,
-      playerAnswer: playerAnswer != null ? String(playerAnswer) : undefined,
-      correctAnswer: correctAnswer != null ? String(correctAnswer) : undefined,
+      playerAnswer: serializeAnswer(playerAnswer),
+      correctAnswer: serializeAnswer(correctAnswer),
       hintCount, timeSpentSeconds: elapsed(),
     });
   },

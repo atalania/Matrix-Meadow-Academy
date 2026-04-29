@@ -20,6 +20,9 @@ const state = {
   score: 0, streak: 0, best: 0,
   timeLeft: null,
   timerHandle: null,
+  // Once a problem is solved (correct grade), revealed, or timed out, the
+  // problem is "settled": further Check clicks must NOT change the score.
+  settled: false,
 };
 
 function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
@@ -33,6 +36,7 @@ function newDrill() {
   state.A = randomMatrix(state.size, r);
   state.B = randomMatrix(state.size, r);
   state.C = multiplyMatrices(state.A, state.B);
+  state.settled = false;
 
   const el = document.getElementById('drill-mats');
   if (!el) return;
@@ -76,7 +80,11 @@ function buildAnswerGrid() {
       const inp = document.createElement('input');
       inp.className = 'dinput';
       inp.type = 'text';
-      inp.inputMode = 'numeric';
+      // `numeric` hides the minus sign on most mobile keyboards; `tel`
+      // shows a numeric keypad that includes "-" so kids can enter
+      // negative integers. The `pattern` is only a hint to the browser.
+      inp.inputMode = 'tel';
+      inp.pattern = '-?[0-9]*';
       inp.autocomplete = 'off';
       inp.dataset.r = r;
       inp.dataset.c = c;
@@ -122,6 +130,11 @@ function readAnswer() {
 // ---------------------------------------------------------------------------
 
 function drillCheck() {
+  if (state.settled) {
+    setFeedback('dfb', 'info', 'ℹ️', 'This problem is already settled — click New Problem to play another.');
+    return;
+  }
+
   const user = readAnswer();
   if (!user) { setFeedback('dfb', 'info', '⚠️', 'Fill every cell with an integer first!'); return; }
 
@@ -140,9 +153,10 @@ function drillCheck() {
 
   if (allOk) {
     clearTimer();
+    state.settled = true;
     state.streak++;
     state.best = Math.max(state.best, state.streak);
-    state.score += 10;
+    state.score = Math.max(0, state.score + 10);
     setFeedback('dfb', 'ok', '✅', `All ${total} entries correct! +10 pts`);
 
     bridge.onCorrect({
@@ -152,7 +166,7 @@ function drillCheck() {
     });
   } else {
     state.streak = 0;
-    state.score -= 3;
+    state.score = Math.max(0, state.score - 3);
     setFeedback('dfb', 'err', '❌', `${correct}/${total} correct. −3 pts.`);
 
     bridge.onIncorrect({
@@ -174,6 +188,7 @@ function drillCheck() {
 function drillReveal(fromTimeout = false) {
   clearTimer();
   state.streak = 0;
+  state.settled = true;
   const n = state.size;
   const el = document.getElementById('drill-answer');
   if (!el) return;
@@ -230,6 +245,8 @@ function buildDotHint() {
 function startTimer() {
   clearTimer();
   if (state.timerMode === 'off') { setText('d-timer-disp', '—'); return; }
+  // Don't run a timer on a problem that's already been graded/revealed.
+  if (state.settled) { setText('d-timer-disp', '—'); return; }
 
   state.timeLeft = +state.timerMode;
   setText('d-timer-disp', `${state.timeLeft}s`);
@@ -237,12 +254,15 @@ function startTimer() {
 
   state.timerHandle = setInterval(() => {
     state.timeLeft--;
-    updateTimerFill();
-    setText('d-timer-disp', `${state.timeLeft}s`);
     if (state.timeLeft <= 0) {
-      state.score -= 1;
+      state.timeLeft = 0;
+      updateTimerFill();
+      state.score = Math.max(0, state.score - 1);
       setText('d-score', state.score);
       drillReveal(true);
+    } else {
+      updateTimerFill();
+      setText('d-timer-disp', `${state.timeLeft}s`);
     }
   }, 1000);
 }

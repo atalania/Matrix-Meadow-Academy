@@ -3,10 +3,16 @@
 // Pure drill helpers — range bounds, cell parsing, grading (no DOM).
 // ============================================================================
 
+const DRILL_RANGE_BY_KEY = { easy: 3, med: 6, hard: 9 };
+
 export function drillRangeNumber(range) {
-  if (range === 'easy') return 3;
-  if (range === 'med') return 6;
-  return 9;
+  if (Object.prototype.hasOwnProperty.call(DRILL_RANGE_BY_KEY, range)) {
+    return DRILL_RANGE_BY_KEY[range];
+  }
+  // Surface programmer mistakes (typo'd data-range, unknown difficulty key)
+  // instead of silently falling through to "hard".
+  console.warn(`drillRangeNumber: unknown range "${range}", defaulting to hard.`);
+  return DRILL_RANGE_BY_KEY.hard;
 }
 
 /** Parse one grid cell; null if empty or not a plain integer string */
