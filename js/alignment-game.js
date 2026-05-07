@@ -34,6 +34,8 @@ const state = {
   seed: 17,
   levels: [],
   timerStart: Date.now(),
+  levelStart: Date.now(),
+  lastPointsEarned: 0,
 };
 
 // ---------------------------------------------------------------------------
@@ -181,6 +183,65 @@ function updateLiveDet() {
   if (el) el.textContent = M ? M.det().toFixed(3) : '—';
 }
 
+function emitAlignmentProgress() {
+  const doneCount = state.done.length;
+  const totalLevels = state.levels.length;
+  window.dispatchEvent(new CustomEvent('mma:alignment-progress', {
+    detail: {
+      doneCount,
+      totalLevels,
+      quizUnlocked: doneCount >= totalLevels && totalLevels > 0,
+    },
+  }));
+}
+
+function setMatrixInputs(a, b, c, d) {
+  const values = [a, b, c, d];
+  ['i00', 'i01', 'i10', 'i11'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = String(values[i]);
+  });
+  updateLiveDet();
+}
+
+function updatePresetAvailability() {
+  const buttons = document.querySelectorAll('.preset-btn[data-req-level]');
+  buttons.forEach((btn) => {
+    const requiredLevel = Number(btn.getAttribute('data-req-level') || '0');
+    const requiredIdx = requiredLevel - 1;
+    const unlocked = Number.isInteger(requiredIdx) && requiredIdx >= 0 && state.done.includes(requiredIdx);
+    btn.disabled = !unlocked;
+    btn.title = unlocked
+      ? 'Unlocked preset'
+      : `Unlock by completing Level ${requiredLevel}`;
+  });
+}
+
+function applyPreset(kind) {
+  if (isAnimating()) return;
+
+  const btn = document.querySelector(`.preset-btn[data-preset="${kind}"]`);
+  if (btn?.disabled) {
+    const requiredLevel = btn.getAttribute('data-req-level') || '?';
+    setFeedback('afb', 'info', '🔒', `This preset unlocks after you complete Level ${requiredLevel}.`);
+    return;
+  }
+
+  const presets = {
+    scale2: [2, 0, 0, 2],
+    shear: [1, 1, 0, 1],
+    rotate90: [0, -1, 1, 0],
+    reflectX: [1, 0, 0, -1],
+  };
+  const picked = presets[kind];
+  if (!picked) return;
+  setMatrixInputs(picked[0], picked[1], picked[2], picked[3]);
+  const M = new M2(picked[0], picked[1], picked[2], picked[3]);
+  triggerAnimation(M, null);
+  setFeedback('afb', 'info', '🧪', 'Preset previewed and applied to canvas. Tweak an entry to explore variations.');
+}
+
 // ---------------------------------------------------------------------------
 // Level management
 // ---------------------------------------------------------------------------
@@ -188,6 +249,7 @@ function updateLiveDet() {
 function loadLevel(idx) {
   state.lvl = idx;
   state.attempts = 0;
+  state.levelStart = Date.now();
   state.curMat = M2.I();
   state.animT = 1;
   state.animTo = M2.I();
@@ -206,6 +268,8 @@ function loadLevel(idx) {
   setText('ltitle', lv.title);
   setText('ldesc', lv.desc);
   setText('lobj', '🎯 ' + lv.obj);
+  setText('a-ltotal', state.levels.length);
+  setText('solve-guide-txt', lv.solveGuide || 'Use Preview first, then apply one matrix idea at a time.');
   setText('teach-txt', lv.teach);
   setText('concept-txt', lv.formulaRef);
   setText('a-lnum', idx + 1);
@@ -221,8 +285,10 @@ function loadLevel(idx) {
 
   setFeedback('afb', 'empty', '🌟', 'Fill in the matrix and click Apply!');
   updateLiveDet();
+  updatePresetAvailability();
   updateLevelDots();
   updateStats();
+  emitAlignmentProgress();
 
   // Notify assistant bridge
   bridge.onLevelStart(`level-${idx + 1}`, lv.concept);
@@ -259,11 +325,14 @@ function applyMatrix() {
       state.streak++;
       state.bestStreak = Math.max(state.bestStreak, state.streak);
       state.totalCorrect++;
-      const pts = Math.max(10, 110 - state.attempts * 12);
+      const pts = scoreForCorrectAttempt();
+      state.lastPointsEarned = pts;
       state.score += pts;
 
       if (!state.done.includes(state.lvl)) state.done.push(state.lvl);
       persistState();
+      updatePresetAvailability();
+      emitAlignmentProgress();
 
       setFeedback('afb', 'ok', '🎉', 'Correct! Monster perfectly aligned!');
       updateStats();
@@ -275,6 +344,16 @@ function applyMatrix() {
         playerAnswer: `[[${M.a},${M.b}],[${M.c},${M.d}]]`,
       });
       bridge.onLevelComplete({ levelId: `level-${state.lvl + 1}`, concept: lv.concept });
+      bridge.onScoreUpdate({
+        source: 'alignment',
+        score: state.score,
+        stats: {
+          levelReached: state.lvl + 1,
+          bestStreak: state.bestStreak,
+          totalCorrect: state.totalCorrect,
+          totalAttempts: state.totalAttempts,
+        },
+      });
 
       setTimeout(showTutorModal, 400);
     } else {
@@ -298,8 +377,27 @@ function applyMatrix() {
 
       persistState();
       updateStats();
+      bridge.onScoreUpdate({
+        source: 'alignment',
+        score: state.score,
+        stats: {
+          levelReached: state.lvl + 1,
+          bestStreak: state.bestStreak,
+          totalCorrect: state.totalCorrect,
+          totalAttempts: state.totalAttempts,
+        },
+      });
     }
   });
+}
+
+function scoreForCorrectAttempt() {
+  const quickSolveSeconds = Math.floor((Date.now() - state.levelStart) / 1000);
+  const base = 70;
+  const attemptBonus = Math.max(0, 28 - (state.attempts - 1) * 10);
+  const speedBonus = Math.max(0, 24 - Math.floor(quickSolveSeconds / 5));
+  const streakBonus = Math.min(18, state.streak * 3);
+  return Math.max(12, base + attemptBonus + speedBonus + streakBonus);
 }
 
 function previewMatrix() {
@@ -363,7 +461,7 @@ function updateStats() {
 function showTutorModal() {
   const lv = state.levels[state.lvl];
   setText('tm-mon', '🎓');
-  setText('tm-pts', `+${Math.max(10, 110 - state.attempts * 12)} pts earned`);
+  setText('tm-pts', `+${state.lastPointsEarned} pts earned`);
   const qEl = document.getElementById('tm-question');
   if (qEl) qEl.textContent = lv.tutorQ;
   const aEl = document.getElementById('tm-answer');
@@ -466,6 +564,16 @@ export function initAlignment() {
     }
   }
   state.levels = buildLevels();
+  bridge.onScoreUpdate({
+    source: 'alignment',
+    score: state.score,
+    stats: {
+      levelReached: state.done.length,
+      bestStreak: state.bestStreak,
+      totalCorrect: state.totalCorrect,
+      totalAttempts: state.totalAttempts,
+    },
+  });
 
   // Canvas
   resizeCanvas();
@@ -495,6 +603,7 @@ export function initAlignment() {
   window.applyMatrix = applyMatrix;
   window.previewMatrix = previewMatrix;
   window.resetLevel = resetLevel;
+  window.applyPreset = applyPreset;
   window.submitToTutor = submitToTutor;
   window.nextLevel = nextLevel;
 }

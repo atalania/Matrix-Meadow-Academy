@@ -217,6 +217,16 @@ function pickAnswer(idx, clickedBtn, shuffled) {
     });
   }
 
+  bridge.onScoreUpdate({
+    source: 'quiz',
+    score: state.score,
+    stats: {
+      answered: state.results.length,
+      correct: state.correct,
+      topicCount: state.topicFilter.size,
+    },
+  });
+
   setText('q-score', state.score);
   setText('q-streak', state.streak);
   setText('q-correct', state.correct);

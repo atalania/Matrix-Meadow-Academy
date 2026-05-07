@@ -179,6 +179,16 @@ function drillCheck() {
     });
   }
 
+  bridge.onScoreUpdate({
+    source: 'drill',
+    score: state.score,
+    stats: {
+      drillSize: state.size,
+      bestDrillStreak: state.best,
+      timerMode: state.timerMode,
+    },
+  });
+
   setText('d-score', state.score);
   setText('d-streak', state.streak);
   setText('d-best', state.best);
@@ -259,6 +269,15 @@ function startTimer() {
       updateTimerFill();
       state.score = Math.max(0, state.score - 1);
       setText('d-score', state.score);
+      bridge.onScoreUpdate({
+        source: 'drill',
+        score: state.score,
+        stats: {
+          drillSize: state.size,
+          bestDrillStreak: state.best,
+          timerMode: state.timerMode,
+        },
+      });
       drillReveal(true);
     } else {
       updateTimerFill();

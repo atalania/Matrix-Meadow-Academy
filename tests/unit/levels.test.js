@@ -5,8 +5,8 @@ import { buildLevels } from '../../js/levels.js';
 describe('buildLevels', () => {
   const levels = buildLevels();
 
-  it('returns nine alignment levels', () => {
-    expect(levels).toHaveLength(9);
+  it('returns eight alignment levels', () => {
+    expect(levels).toHaveLength(8);
   });
 
   it('exposes required fields on every level', () => {

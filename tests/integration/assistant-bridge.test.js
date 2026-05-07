@@ -93,6 +93,24 @@ describe('assistant-bridge portal handshake', () => {
       expect(postMessage.mock.calls[1][0].payload.hintCount).toBe(2);
     });
 
+    it('posts score_update with leaderboard-friendly gameData fields', () => {
+      bridge.onScoreUpdate({
+        source: 'alignment',
+        score: 123,
+        stats: { levelReached: 4 },
+      });
+
+      const p = postMessage.mock.calls[0][0].payload;
+      expect(p.eventType).toBe('score_update');
+      expect(p.score).toBe(123);
+      expect(p.highScore).toBe(123);
+      expect(p.additionalContext.gameData.highScore).toBe(123);
+      expect(p.additionalContext.gameData.score).toBe(123);
+      expect(p.additionalContext.gameData.matrixMeadow.highScore).toBe(123);
+      expect(p.additionalContext.gameData.matrixMeadow.score).toBe(123);
+      expect(p.additionalContext.gameData.stats).toEqual({ levelReached: 4 });
+    });
+
     it('reports rounded elapsed seconds since level start', () => {
       let t = 1_000_000;
       vi.spyOn(Date, 'now').mockImplementation(() => t);
@@ -100,6 +118,63 @@ describe('assistant-bridge portal handshake', () => {
       t += 3_500;
       bridge.onCorrect({ levelId: 'level-1', concept: 'concept', playerAnswer: 'ok' });
       expect(postMessage.mock.calls[1][0].payload.timeSpentSeconds).toBe(4);
+    });
+
+    it('restores persisted bridge scores across module reloads', async () => {
+      const scoreKey = 'mm_bridge_score_v1';
+      const storage = new Map();
+      const localStorageMock = {
+        getItem: vi.fn((k) => (storage.has(k) ? storage.get(k) : null)),
+        setItem: vi.fn((k, v) => storage.set(k, v)),
+      };
+
+      vi.stubGlobal('localStorage', localStorageMock);
+
+      bridge.onScoreUpdate({
+        source: 'alignment',
+        score: 150,
+        stats: { levelReached: 3 },
+      });
+      bridge.onScoreUpdate({
+        source: 'drill',
+        score: 50,
+        stats: { drillsSolved: 8 },
+      });
+
+      expect(storage.has(scoreKey)).toBe(true);
+      const saved = JSON.parse(storage.get(scoreKey));
+      expect(saved.alignment).toBe(150);
+      expect(saved.drill).toBe(50);
+      expect(saved.bestTotalScore).toBe(200);
+
+      vi.resetModules();
+      ({ bridge } = await import('../../js/assistant-bridge.js'));
+
+      bridge.onScoreUpdate({
+        source: 'quiz',
+        score: 25,
+        stats: { perfectRounds: 1 },
+      });
+      const payload = postMessage.mock.calls.at(-1)[0].payload;
+      expect(payload.eventType).toBe('score_update');
+      expect(payload.score).toBe(225);
+      expect(payload.highScore).toBe(225);
+    });
+
+    it('falls back to empty score state when persisted JSON is invalid', async () => {
+      const localStorageMock = {
+        getItem: vi.fn(() => '{bad json'),
+        setItem: vi.fn(),
+      };
+      vi.stubGlobal('localStorage', localStorageMock);
+
+      vi.resetModules();
+      ({ bridge } = await import('../../js/assistant-bridge.js'));
+
+      bridge.onScoreUpdate({ source: 'alignment', score: 40, stats: {} });
+      const payload = postMessage.mock.calls.at(-1)[0].payload;
+      expect(payload.score).toBe(40);
+      expect(payload.highScore).toBe(40);
     });
 
     it('resetProblem clears hint baseline for the next level start', () => {

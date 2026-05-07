@@ -5,9 +5,12 @@
 // ============================================================================
 
 const GAME_ID = 'matrix-meadow';
+const SCORE_STORAGE_KEY = 'mm_bridge_score_v1';
 
 let problemStartTime = Date.now();
 let hintCount = 0;
+let moduleScores = loadScoreState();
+let bestTotalScore = Math.max(0, Number(moduleScores.bestTotalScore) || 0);
 
 function elapsed() { return Math.round((Date.now() - problemStartTime) / 1000); }
 
@@ -17,6 +20,47 @@ function sendToPortal(payload) {
     return;
   }
   window.parent.postMessage({ type: 'ASSISTANT_GAME_EVENT', payload }, '*');
+}
+
+function loadScoreState() {
+  try {
+    const raw = localStorage.getItem(SCORE_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+    return parsed;
+  } catch {
+    return {};
+  }
+}
+
+function persistScoreState() {
+  try {
+    localStorage.setItem(SCORE_STORAGE_KEY, JSON.stringify({
+      ...moduleScores,
+      bestTotalScore,
+    }));
+  } catch {
+    // Ignore localStorage failures in sandbox/private mode.
+  }
+}
+
+function safeNumeric(value) {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function leaderboardData(totalScore, stats = {}) {
+  return {
+    highScore: bestTotalScore,
+    score: totalScore,
+    lastPlayedAt: new Date().toISOString(),
+    matrixMeadow: {
+      highScore: bestTotalScore,
+      score: totalScore,
+    },
+    stats,
+  };
 }
 
 /**
@@ -99,6 +143,32 @@ export const bridge = {
     sendToPortal({
       gameId: GAME_ID, levelId, eventType: 'hint_request',
       targetConcept: concept, hintCount, timeSpentSeconds: elapsed(),
+    });
+  },
+
+  /**
+   * Synchronize score for leaderboard ingestion.
+   * The payload includes root highScore/score plus matrixMeadow aliases.
+   */
+  onScoreUpdate({ source, score, stats } = {}) {
+    const moduleKey = source || 'alignment';
+    moduleScores[moduleKey] = Math.max(0, Math.round(safeNumeric(score)));
+    const totalScore = Object.entries(moduleScores)
+      .filter(([k]) => k !== 'bestTotalScore')
+      .reduce((sum, [, val]) => sum + Math.max(0, Math.round(safeNumeric(val))), 0);
+
+    bestTotalScore = Math.max(bestTotalScore, totalScore);
+    persistScoreState();
+
+    sendToPortal({
+      gameId: GAME_ID,
+      eventType: 'score_update',
+      score: totalScore,
+      highScore: bestTotalScore,
+      additionalContext: {
+        source: moduleKey,
+        gameData: leaderboardData(totalScore, stats),
+      },
     });
   },
 };
