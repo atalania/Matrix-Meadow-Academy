@@ -378,23 +378,34 @@ body {
   }
 }
 
-/* Short desktop iframes need an internal scroll instead of clipped content. */
+/* Short desktop iframes: keep the app fixed, but scroll dense text cards internally. */
 @media (min-width: 1100px) and (pointer: fine) and (max-height: 760px) {
-  #app {
-    overflow-y: auto;
-    padding-bottom: 28px;
-    scrollbar-width: thin;
-  }
   #tab-alignment #canvas-wrap {
     height: clamp(260px, 43vh, 390px);
   }
-  #tab-drill > .panel .concept {
-    max-height: 180px;
-    overflow-y: auto;
+  #tab-alignment .alignment-info-panel {
+    overflow: hidden;
   }
-  #tab-drill .panel,
-  #tab-alignment .panel {
-    scroll-margin-top: 12px;
+  #tab-alignment .alignment-info-panel .info-tab-panel.active {
+    max-height: clamp(120px, calc(100vh - 380px), 260px);
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  #tab-drill .right-col {
+    display: grid;
+    grid-template-rows: minmax(100px, .42fr) minmax(0, 1fr);
+    max-height: clamp(260px, calc(100vh - 235px), 430px);
+    overflow: hidden;
+  }
+  #tab-drill .right-col .panel {
+    min-height: 0;
+    overflow: hidden;
+  }
+  #dp-hint,
+  #tab-drill .right-col .concept {
+    max-height: 100%;
+    overflow-y: auto;
+    padding-right: 4px;
   }
 }
 
