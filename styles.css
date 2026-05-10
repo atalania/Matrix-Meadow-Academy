@@ -157,6 +157,7 @@ body {
 .right-col>*+*{margin-top:14px;}
 .alignment-layout{grid-template-columns:minmax(0,1.5fr) minmax(300px,.8fr);align-items:start;}
 .alignment-play-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.55fr);gap:16px;align-items:start;}
+.alignment-side-col{display:grid;gap:18px;align-items:start;}
 .matrix-stage{background:linear-gradient(135deg,#fbfdff,#f8f4ff);border:1px solid #d9cdf044;border-radius:16px;padding:14px;}
 .info-tab-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px;}
 .info-tab-btn{border:1px solid #d4dce8;border-radius:999px;background:#f1f4f8;color:var(--muted);font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;padding:8px 10px;cursor:pointer;transition:all .12s;}
@@ -166,6 +167,7 @@ body {
 @media(max-width:900px){
   .alignment-layout,
   .alignment-play-grid{grid-template-columns:1fr;}
+  .alignment-side-col{gap:14px;}
   .info-tab-bar{grid-template-columns:1fr 1fr;}
   #tab-alignment #canvas-wrap{height:clamp(240px,58vw,360px);}
 }
@@ -173,8 +175,9 @@ body {
 /* Desktop fit mode: wide mouse screens should show a full tab without page scrollbars. */
 @media (min-width: 1100px) and (pointer: fine) {
   #app {
-    max-width: 1360px;
-    padding: 10px 14px 14px;
+    width: min(96vw, 1520px);
+    max-width: none;
+    padding: 10px 16px 14px;
     overflow: hidden;
   }
   #header {
@@ -223,7 +226,7 @@ body {
     font-size: 17px;
   }
   .game-layout {
-    gap: 12px;
+    gap: 16px;
   }
   .left-col>*+*,
   .right-col>*+* {
@@ -272,7 +275,7 @@ body {
   }
 
   #tab-alignment .alignment-layout {
-    grid-template-columns: minmax(600px, 1fr) minmax(330px, .48fr);
+    grid-template-columns: minmax(620px, 1.65fr) minmax(360px, .85fr);
     align-items: start;
   }
   #tab-alignment .alignment-play-grid {
@@ -280,42 +283,43 @@ body {
     gap: 10px;
   }
   #tab-alignment .alignment-play-panel,
-  #tab-alignment .alignment-info-panel {
+  #tab-alignment .alignment-info-panel,
+  #tab-alignment .matrix-stage {
     min-height: 0;
     align-self: start;
   }
   #tab-alignment #canvas-wrap {
-    height: clamp(270px, 44vh, 410px);
+    height: clamp(315px, 50vh, 500px);
+  }
+  #tab-alignment .alignment-side-col {
+    gap: 14px;
   }
   #tab-alignment .matrix-stage {
-    display: grid;
-    grid-template-columns: auto auto minmax(180px, 1fr);
-    gap: 6px 14px;
-    align-items: center;
-    padding: 10px;
-  }
-  #tab-alignment .matrix-stage .panel-title {
-    grid-row: 1 / span 2;
-    margin-bottom: 0;
-    white-space: nowrap;
+    padding: 14px;
   }
   #tab-alignment .matrix-stage .mwrap {
-    grid-row: 1 / span 2;
+    display: flex;
+    justify-content: center;
   }
   #tab-alignment .matrix-stage .brow {
-    margin-top: 0;
-  }
-  #tab-alignment .matrix-stage .fb {
-    grid-column: 3;
-    margin-top: 0;
+    justify-content: center;
   }
   #tab-alignment .info-tab-bar {
     gap: 6px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
   #tab-alignment .info-tab-btn {
     font-size: 11px;
-    padding: 6px 8px;
+    padding: 7px 10px;
+  }
+  #tab-alignment .alignment-info-panel .panel-title {
+    margin-bottom: 10px;
+  }
+  #tab-alignment .alignment-info-panel .linfo,
+  #tab-alignment .alignment-info-panel .solve-guide,
+  #tab-alignment .alignment-info-panel .concept,
+  #tab-alignment .alignment-info-panel .teach-panel {
+    box-shadow:0 4px 12px rgba(30,42,58,.04);
   }
   #tab-alignment .legend-grid {
     gap: 6px;
