@@ -219,7 +219,7 @@ function alignmentAssistantLevelContext(idx, lv) {
     referenceTargetMatrix: [[lv.target.a, lv.target.b], [lv.target.c, lv.target.d]],
     referenceTargetDeterminant: refDet,
     uiSummary:
-      'Player edits [[a,b],[c,d]], Apply commits and scores, Preview animates without committing, Reset reloads the level. Canvas: solid cyan = current transform, red dashed = target.',
+      'Player edits [[a,b],[c,d]], Apply commits the transform, Preview animates without committing, Reset reloads the level. Canvas: solid cyan = current transform, red dashed = target.',
   };
 }
 
@@ -390,12 +390,7 @@ function applyMatrix() {
       void bridge.onScoreUpdate({
         source: 'alignment',
         score: state.score,
-        stats: {
-          levelReached: state.lvl + 1,
-          bestStreak: state.bestStreak,
-          totalCorrect: state.totalCorrect,
-          totalAttempts: state.totalAttempts,
-        },
+        stats: { levelReached: state.lvl + 1 },
       }).then(() => updateStats());
 
       setTimeout(showTutorModal, 400);
@@ -433,12 +428,7 @@ function applyMatrix() {
       void bridge.onScoreUpdate({
         source: 'alignment',
         score: state.score,
-        stats: {
-          levelReached: state.lvl + 1,
-          bestStreak: state.bestStreak,
-          totalCorrect: state.totalCorrect,
-          totalAttempts: state.totalAttempts,
-        },
+        stats: { levelReached: state.lvl + 1 },
       }).then(() => updateStats());
     }
   });
@@ -585,7 +575,6 @@ async function submitToTutor() {
       level_concept: lv.formulaRef,
       tutor_question: lv.tutorQ,
       student_answer: answer,
-      attempts: state.attempts,
     });
     if (resp) {
       resp.className = 'tutor-response show';
@@ -691,10 +680,7 @@ export function initAlignment() {
     source: 'alignment',
     score: state.score,
     stats: {
-      levelReached: state.done.length,
-      bestStreak: state.bestStreak,
-      totalCorrect: state.totalCorrect,
-      totalAttempts: state.totalAttempts,
+      levelReached: state.done.length ? Math.max(...state.done) + 1 : 1,
     },
   }).then(() => updateStats());
 

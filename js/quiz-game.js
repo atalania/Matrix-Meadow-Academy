@@ -257,7 +257,6 @@ function pickAnswer(idx, clickedBtn, shuffled) {
     score: state.score,
     stats: {
       answered: state.results.length,
-      correct: state.correct,
       topicCount: state.topicFilter.size,
     },
   }).then(() => {

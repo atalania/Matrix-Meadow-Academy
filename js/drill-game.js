@@ -257,11 +257,7 @@ function drillCheck() {
   void bridge.onScoreUpdate({
     source: 'drill',
     score: state.score,
-    stats: {
-      drillSize: state.size,
-      bestDrillStreak: state.best,
-      timerMode: state.timerMode,
-    },
+    stats: { drillSize: state.size, timerMode: state.timerMode },
   }).then(() => {
     setText('d-score', state.score);
     setText('d-streak', state.streak);
@@ -338,12 +334,7 @@ function drillTimerTick() {
     void bridge.onScoreUpdate({
       source: 'drill',
       score: state.score,
-      stats: {
-        drillSize: state.size,
-        bestDrillStreak: state.best,
-        timerMode: state.timerMode,
-        timedOut: true,
-      },
+      stats: { drillSize: state.size, timerMode: state.timerMode, timedOut: true },
     }).then(() => {
       const tb = bridge.getTrackBests?.();
       if (tb) setText('d-high', tb.drillBest);
