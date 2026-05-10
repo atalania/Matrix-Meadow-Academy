@@ -303,54 +303,39 @@ of a ROW of A with a COLUMN of B.
   </div>
 </div>
 
-<!-- New player tutorial modal -->
+<!-- New player tutorial modal (multi-step wizard; steps driven from js/main.js) -->
 <div id="welcome-modal" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
-  <div class="welcome-card">
+  <div class="welcome-card welcome-card-wide">
     <button class="welcome-close" id="welcome-close" aria-label="Close tutorial">×</button>
     <div class="welcome-top">
-      <div class="welcome-mon">🎓</div>
+      <div class="welcome-mon" id="welcome-step-icon" aria-hidden="true">🎓</div>
       <div class="welcome-title" id="welcome-title">Welcome to Matrix Meadow Academy!</div>
-      <div class="welcome-sub">Professor Meadow here. Let's learn the basics together.</div>
+      <div class="welcome-sub" id="welcome-sub">Professor Meadow here. Let's learn the basics together.</div>
     </div>
     <div class="welcome-body">
-      <div class="welcome-section">
-        <div class="welcome-heading">How matrix multiplication works</div>
-        <p>For each answer cell in C, take <strong>one row from A</strong> and <strong>one column from B</strong>. Multiply matching positions and add the results.</p>
-        <p>Quick pattern: <strong>row × column = one cell</strong>.</p>
+      <div class="welcome-progress-row" aria-hidden="true">
+        <span class="welcome-progress-label" id="welcome-progress-label">Step 1 of 12</span>
+        <div class="welcome-progress-track">
+          <div class="welcome-progress-fill" id="welcome-progress-fill"></div>
+        </div>
       </div>
-      <div class="welcome-section">
-        <div class="welcome-heading">Your first 60 seconds (recommended)</div>
-        <ol class="welcome-steps">
-          <li>Open <strong>Multiplication Drill</strong>.</li>
-          <li>Click <strong>New Problem</strong> if a problem is not already shown.</li>
-          <li>Fill the answer matrix <strong>one cell at a time</strong> from top-left to bottom-right.</li>
-          <li>Press <strong>Check</strong> to see the dot-product breakdown.</li>
-          <li>If incorrect, fix signs and arithmetic, then check again.</li>
-        </ol>
+      <div id="welcome-step-main" class="welcome-step-main" role="region" aria-live="polite" aria-atomic="true"></div>
+      <div class="welcome-final-only" id="welcome-final-only" hidden>
+        <div class="welcome-actions welcome-final-actions">
+          <button type="button" class="btn bp" id="welcome-go-alignment">🐾 Start with Monster Alignment</button>
+          <button type="button" class="btn bs" id="welcome-go-drill">⚡ Start with Multiplication Drill</button>
+          <button type="button" class="btn bg" id="welcome-explore">I'll explore on my own</button>
+        </div>
       </div>
-      <div class="welcome-section">
-        <div class="welcome-heading">Common beginner mistakes to avoid</div>
-        <ul class="welcome-steps">
-          <li>Do not multiply row-by-row. Always do <strong>row of A with column of B</strong>.</li>
-          <li>Keep matrix order as shown. In general, <strong>A x B is not equal to B x A</strong>.</li>
-          <li>Watch negative signs carefully, especially when adding products.</li>
-        </ul>
-      </div>
-      <div class="welcome-section">
-        <div class="welcome-heading">What each game mode teaches</div>
-        <ul class="welcome-steps">
-          <li><strong>Monster Alignment:</strong> visual intuition for transformations.</li>
-          <li><strong>Multiplication Drill:</strong> speed and accuracy with calculations.</li>
-          <li><strong>Vocab Quiz:</strong> clear understanding of key terms and ideas.</li>
-        </ul>
-      </div>
-      <div class="welcome-actions">
-        <button class="btn bp" id="welcome-start">Let's Start Learning</button>
-        <button class="btn bs welcome-tab-jump" data-go-tab="drill">Take Me to Drill</button>
+      <div class="welcome-nav" id="welcome-nav-row">
+        <button type="button" class="btn bg" id="welcome-back" disabled>← Back</button>
+        <span class="welcome-nav-fill" aria-hidden="true"></span>
+        <button type="button" class="welcome-skip-link" id="welcome-skip-tutorial">Skip tutorial</button>
+        <button type="button" class="btn bp" id="welcome-next">Next →</button>
       </div>
       <label class="welcome-checkbox">
         <input type="checkbox" id="welcome-hide-next" checked>
-        <span>Don't show this again</span>
+        <span>Don't show this again next visit</span>
       </label>
     </div>
   </div>

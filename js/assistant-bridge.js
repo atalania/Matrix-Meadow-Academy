@@ -336,9 +336,18 @@ export const bridge = {
     stemAssistant.resetProblemTimer();
   },
 
-  /** Call when a level begins */
-  onLevelStart(levelId, concept) {
-    stemAssistant.levelStart({ levelId, targetConcept: concept });
+  /**
+   * Call when a level or problem begins (hub assistant reads `additionalContext`).
+   * @param {{ levelId: string, concept: string, additionalContext?: Record<string, unknown> }} p
+   */
+  onLevelStart({ levelId, concept, additionalContext }) {
+    stemAssistant.levelStart({
+      levelId,
+      targetConcept: concept,
+      ...(additionalContext != null && typeof additionalContext === 'object'
+        ? { additionalContext }
+        : {}),
+    });
   },
 
   /** Call when the player submits a wrong answer */

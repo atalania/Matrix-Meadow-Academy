@@ -1,6 +1,6 @@
 // ============================================================================
 // js/levels.js
-// All 9 alignment level definitions. Data only — no game logic.
+// All 8 Monster Alignment level definitions. Data only — no game logic.
 // ============================================================================
 
 import { M2 } from './math-engine.js';

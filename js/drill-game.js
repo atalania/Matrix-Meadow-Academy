@@ -32,7 +32,17 @@ const state = {
   settled: false,
 };
 
+/** Seconds left when welcome tutorial pauses the drill countdown (not cleared by clearTimer). */
+let drillWelcomePauseLeft = null;
+
 function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+function drillRangeDescription(range) {
+  if (range === 'easy') return 'Entries drawn from small integers (about ±3).';
+  if (range === 'med') return 'Entries drawn from medium integers (about ±6).';
+  if (range === 'hard') return 'Entries drawn from larger integers (about ±9).';
+  return `Range preset: ${range}`;
+}
 
 // ---------------------------------------------------------------------------
 // Problem generation
@@ -67,7 +77,25 @@ function newDrill() {
   const drillLevelId = `drill_${state.size}x${state.size}`;
   setStemAssistantLevel(drillLevelId, 'matrix_multiplication_drill');
   bridge.resetProblem();
-  bridge.onLevelStart(drillLevelId, 'matrix_multiplication_drill');
+  bridge.onLevelStart({
+    levelId: drillLevelId,
+    concept: 'matrix_multiplication_drill',
+    additionalContext: {
+      mode: 'multiplication_drill',
+      activityName: 'Matrix Multiplication Drill',
+      taskDescription: 'Compute C = A × B. Each cell of C is the dot product of one row of A with one column of B; order is not commutative.',
+      gridSize: state.size,
+      matrixLayoutLabel: `${state.size}×${state.size}`,
+      numberRangePreset: state.range,
+      numberRangeDescription: drillRangeDescription(state.range),
+      timerMode: state.timerMode,
+      matrixA: state.A,
+      matrixB: state.B,
+      expectedProductMatrixC: state.C,
+      interactionSummary:
+        'Player fills the answer grid, Check marks cells and fills the Dot Product Breakdown panel, Reveal shows the full C, New Problem draws fresh A and B.',
+    },
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -301,6 +329,32 @@ function buildDotHint() {
 // Timer
 // ---------------------------------------------------------------------------
 
+function drillTimerTick() {
+  state.timeLeft--;
+  if (state.timeLeft <= 0) {
+    state.timeLeft = 0;
+    updateTimerFill();
+    setText('d-score', state.score);
+    void bridge.onScoreUpdate({
+      source: 'drill',
+      score: state.score,
+      stats: {
+        drillSize: state.size,
+        bestDrillStreak: state.best,
+        timerMode: state.timerMode,
+        timedOut: true,
+      },
+    }).then(() => {
+      const tb = bridge.getTrackBests?.();
+      if (tb) setText('d-high', tb.drillBest);
+    });
+    drillReveal(true);
+  } else {
+    updateTimerFill();
+    setText('d-timer-disp', `${state.timeLeft}s`);
+  }
+}
+
 function startTimer() {
   clearTimer();
   if (state.timerMode === 'off') { setText('d-timer-disp', '—'); return; }
@@ -311,40 +365,37 @@ function startTimer() {
   setText('d-timer-disp', `${state.timeLeft}s`);
   updateTimerFill();
 
-  state.timerHandle = setInterval(() => {
-    state.timeLeft--;
-    if (state.timeLeft <= 0) {
-      state.timeLeft = 0;
-      updateTimerFill();
-      setText('d-score', state.score);
-      void bridge.onScoreUpdate({
-        source: 'drill',
-        score: state.score,
-        stats: {
-          drillSize: state.size,
-          bestDrillStreak: state.best,
-          timerMode: state.timerMode,
-          timedOut: true,
-        },
-      }).then(() => {
-        const tb = bridge.getTrackBests?.();
-        if (tb) setText('d-high', tb.drillBest);
-      });
-      drillReveal(true);
-    } else {
-      updateTimerFill();
-      setText('d-timer-disp', `${state.timeLeft}s`);
-    }
-  }, 1000);
+  state.timerHandle = setInterval(drillTimerTick, 1000);
 }
 
 function clearTimer() {
   clearInterval(state.timerHandle);
   state.timerHandle = null;
   state.timeLeft = null;
+  drillWelcomePauseLeft = null;
   setText('d-timer-disp', '—');
   const f = document.getElementById('drill-timer-fill');
   if (f) { f.style.width = '100%'; f.className = 'timer-fill'; }
+}
+
+function pauseDrillTimerForWelcomeOverlay() {
+  if (state.timerHandle == null) return;
+  clearInterval(state.timerHandle);
+  state.timerHandle = null;
+  drillWelcomePauseLeft = state.timeLeft;
+}
+
+function resumeDrillTimerForWelcomeOverlay() {
+  if (drillWelcomePauseLeft == null) return;
+  if (state.timerMode === 'off' || state.settled) {
+    drillWelcomePauseLeft = null;
+    return;
+  }
+  state.timeLeft = drillWelcomePauseLeft;
+  drillWelcomePauseLeft = null;
+  setText('d-timer-disp', `${state.timeLeft}s`);
+  updateTimerFill();
+  state.timerHandle = setInterval(drillTimerTick, 1000);
 }
 
 function updateTimerFill() {
@@ -384,4 +435,10 @@ export function initDrill() {
   window.drillCheck = drillCheck;
   window.drillReveal = () => drillReveal(false);
   window.newDrill = newDrill;
+
+  window.addEventListener('mma:welcome-overlay', (e) => {
+    const open = !!(e && e.detail && e.detail.open);
+    if (open) pauseDrillTimerForWelcomeOverlay();
+    else resumeDrillTimerForWelcomeOverlay();
+  });
 }

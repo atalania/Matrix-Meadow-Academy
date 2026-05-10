@@ -129,12 +129,21 @@ export const stemAssistant = {
   },
 
   /**
-   * @param {{ levelId: string, targetConcept: string }} p
+   * @param {{
+   *   levelId: string,
+   *   targetConcept: string,
+   *   additionalContext?: Record<string, unknown>,
+   * }} p
    */
   levelStart(p) {
+    const hasAdditionalContext = p.additionalContext != null && typeof p.additionalContext === 'object';
+    // Opening auto level_start has no context; skip only the duplicate bare
+    // follow-up so the hub does not see two identical starts. Always post when
+    // the game supplies additionalContext (rich level/problem snapshot).
     if (openingLevelStartGuard
       && p.levelId === openingLevelStartGuard.levelId
-      && p.targetConcept === openingLevelStartGuard.targetConcept) {
+      && p.targetConcept === openingLevelStartGuard.targetConcept
+      && !hasAdditionalContext) {
       openingLevelStartGuard = null;
       setStemAssistantLevel(p.levelId, p.targetConcept);
       this.resetProblemTimer();
@@ -151,6 +160,9 @@ export const stemAssistant = {
       targetConcept: p.targetConcept,
       hintCount: 0,
       timeSpentSeconds: 0,
+      ...(p.additionalContext != null && typeof p.additionalContext === 'object'
+        ? { additionalContext: p.additionalContext }
+        : {}),
     });
   },
 

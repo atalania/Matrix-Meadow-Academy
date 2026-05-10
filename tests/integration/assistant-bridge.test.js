@@ -141,10 +141,28 @@ describe('assistant-bridge portal handshake', () => {
     it('reports rounded elapsed seconds since level start', () => {
       let t = 1_000_000;
       vi.spyOn(Date, 'now').mockImplementation(() => t);
-      bridge.onLevelStart('level_1', 'concept');
+      bridge.onLevelStart({ levelId: 'level_1', concept: 'concept' });
       t += 3_500;
       bridge.onCorrect({ levelId: 'level_1', concept: 'concept', playerAnswer: 'ok' });
       expect(postMessage.mock.calls[1][0].payload.timeSpentSeconds).toBe(4);
+    });
+
+    it('includes additionalContext on level_start when provided', () => {
+      bridge.onLevelStart({
+        levelId: 'level_2',
+        concept: 'shear_transformation',
+        additionalContext: {
+          mode: 'monster_alignment',
+          title: 'Level 3: Shear',
+          objective: 'Horizontal shear b=1.5',
+        },
+      });
+      const p = postMessage.mock.calls
+        .map((c) => c[0].payload)
+        .find((pl) => pl.eventType === 'level_start' && pl.levelId === 'level_2');
+      expect(p).toBeDefined();
+      expect(p.additionalContext.mode).toBe('monster_alignment');
+      expect(p.additionalContext.title).toBe('Level 3: Shear');
     });
 
     it('restores persisted bridge scores across module reloads', async () => {
@@ -211,7 +229,7 @@ describe('assistant-bridge portal handshake', () => {
     it('resetProblem clears hint baseline for the next level start', () => {
       bridge.onHintRequest({ levelId: 'level_1', concept: 'a' });
       bridge.resetProblem();
-      bridge.onLevelStart('level_2', 'b');
+      bridge.onLevelStart({ levelId: 'level_2', concept: 'b' });
       const startPayload = postMessage.mock.calls.find(
         (c) => c[0].payload.eventType === 'level_start',
       );
@@ -233,7 +251,7 @@ describe('assistant-bridge portal handshake', () => {
       vi.resetModules();
       const { bridge } = await import('../../js/assistant-bridge.js');
 
-      bridge.onLevelStart('level_1', 'concept_x');
+      bridge.onLevelStart({ levelId: 'level_1', concept: 'concept_x' });
       expect(self.postMessage).not.toHaveBeenCalled();
     });
   });

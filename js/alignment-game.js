@@ -197,6 +197,32 @@ function emitAlignmentProgress() {
   }));
 }
 
+/** Snapshot for STEM hub web assistants (`level_start` additionalContext). */
+function alignmentAssistantLevelContext(idx, lv) {
+  const refDet = lv.target.det();
+  return {
+    mode: 'monster_alignment',
+    activityName: 'Monster Alignment',
+    levelNumber: idx + 1,
+    levelIndex: idx,
+    title: lv.title,
+    description: lv.desc,
+    objective: lv.obj,
+    validation: lv.validate,
+    validationRules: lv.validate === 'det6'
+      ? 'Accept any diagonal 2×2 matrix with determinant exactly 6 (many answers; reference matrix is one example).'
+      : 'Exact matrix match to the level’s target transform.',
+    solveGuide: lv.solveGuide || '',
+    levelHintTeaching: lv.teach || '',
+    formulaReferencePanel: lv.formulaRef || '',
+    postLevelTutorQuestion: lv.tutorQ || '',
+    referenceTargetMatrix: [[lv.target.a, lv.target.b], [lv.target.c, lv.target.d]],
+    referenceTargetDeterminant: refDet,
+    uiSummary:
+      'Player edits [[a,b],[c,d]], Apply commits and scores, Preview animates without committing, Reset reloads the level. Canvas: solid cyan = current transform, red dashed = target.',
+  };
+}
+
 function setMatrixInputs(a, b, c, d) {
   const values = [a, b, c, d];
   ['i00', 'i01', 'i10', 'i11'].forEach((id, i) => {
@@ -296,8 +322,12 @@ function loadLevel(idx) {
   updateStats();
   emitAlignmentProgress();
 
-  // Notify assistant bridge
-  bridge.onLevelStart(`level_${idx + 1}`, lv.concept);
+  // Notify assistant bridge (rich context for hub web assistants)
+  bridge.onLevelStart({
+    levelId: `level_${idx + 1}`,
+    concept: lv.concept,
+    additionalContext: alignmentAssistantLevelContext(idx, lv),
+  });
 }
 
 function setText(id, text) {
@@ -580,7 +610,7 @@ function nextLevel() {
   if (n < state.levels.length) {
     loadLevel(n);
   } else {
-    setFeedback('afb', 'ok', '🏆', "All 9 levels complete! You're a Matrix Master!");
+    setFeedback('afb', 'ok', '🏆', `All ${state.levels.length} levels complete! You're a Matrix Master!`);
   }
 }
 
@@ -588,14 +618,44 @@ function nextLevel() {
 // Timer
 // ---------------------------------------------------------------------------
 
-function startTimer() {
-  state.timerStart = Date.now();
-  setInterval(() => {
-    const e = Math.floor((Date.now() - state.timerStart) / 1000);
-    const m = Math.floor(e / 60);
-    const s = e % 60;
-    setText('a-time', `${m}:${s.toString().padStart(2, '0')}`);
-  }, 1000);
+let alignmentTimerId = null;
+let alignmentFrozenSec = null;
+
+function tickAlignmentClock() {
+  const e = Math.floor((Date.now() - state.timerStart) / 1000);
+  const m = Math.floor(e / 60);
+  const s = e % 60;
+  setText('a-time', `${m}:${s.toString().padStart(2, '0')}`);
+}
+
+/** @param {number | null} resumeFromSec wall elapsed to show (null = restart from now) */
+function startTimer(resumeFromSec = null) {
+  if (alignmentTimerId != null) {
+    clearInterval(alignmentTimerId);
+    alignmentTimerId = null;
+  }
+  if (resumeFromSec != null) {
+    state.timerStart = Date.now() - resumeFromSec * 1000;
+  } else {
+    state.timerStart = Date.now();
+  }
+  tickAlignmentClock();
+  alignmentTimerId = setInterval(tickAlignmentClock, 1000);
+}
+
+function pauseAlignmentTimerForWelcomeOverlay() {
+  if (alignmentTimerId != null) {
+    clearInterval(alignmentTimerId);
+    alignmentTimerId = null;
+  }
+  alignmentFrozenSec = Math.floor((Date.now() - state.timerStart) / 1000);
+}
+
+function resumeAlignmentTimerAfterWelcomeOverlay() {
+  const sec = alignmentFrozenSec;
+  alignmentFrozenSec = null;
+  if (sec == null) return;
+  startTimer(sec);
 }
 
 // ---------------------------------------------------------------------------
@@ -661,6 +721,12 @@ export function initAlignment() {
   loadLevel(0);
   startTimer();
   requestAnimationFrame(render);
+
+  window.addEventListener('mma:welcome-overlay', (e) => {
+    const open = !!(e && e.detail && e.detail.open);
+    if (open) pauseAlignmentTimerForWelcomeOverlay();
+    else resumeAlignmentTimerAfterWelcomeOverlay();
+  });
 
   // Expose to global for button onclick handlers
   window.applyMatrix = applyMatrix;

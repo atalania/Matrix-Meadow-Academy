@@ -54,6 +54,11 @@ const state = {
 
 function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 
+function quizPromptPlainText(html) {
+  if (typeof html !== 'string') return '';
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 // ---------------------------------------------------------------------------
 // Topic filter
 // ---------------------------------------------------------------------------
@@ -174,6 +179,21 @@ function renderQuestion() {
   const qid = `quiz_q${state.idx + 1}`;
   setStemAssistantLevel(qid, 'linear_algebra_vocabulary');
   bridge.resetProblem();
+  bridge.onLevelStart({
+    levelId: qid,
+    concept: 'linear_algebra_vocabulary',
+    additionalContext: {
+      mode: 'vocab_quiz',
+      activityName: 'Linear Algebra Vocab Quiz',
+      topic: q.t,
+      promptPlainText: quizPromptPlainText(q.p),
+      choices: [...q.ch],
+      questionInRun: state.idx + 1,
+      questionsInRunTotal: state.order.length,
+      explanationAfterAnswer: q.ex,
+      interactionSummary: 'Multiple choice; Next unlocks after an answer; Restart clears the run; Shuffle reorders the same filtered bank.',
+    },
+  });
 }
 
 function pickAnswer(idx, clickedBtn, shuffled) {
