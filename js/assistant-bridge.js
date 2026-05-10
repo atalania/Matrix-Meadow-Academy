@@ -3,6 +3,10 @@
 // Game-facing API: score portal merge + delegation to stem-assistant-bridge
 // for assistant events (no direct postMessage for assistant traffic).
 // Works silently when not inside an iframe (standalone dev mode).
+//
+// Score / leaderboard persistence is flushed via STEM_PORTAL_GAME_DATA — not
+// ASSISTANT_GAME_EVENT — so hub web assistants are not fed score_update
+// payloads (they were narrating points instead of math).
 // ============================================================================
 
 import {
@@ -63,14 +67,6 @@ function postRawToParent(message) {
     return;
   }
   window.parent.postMessage(message, '*');
-}
-
-function sendToPortal(payload) {
-  if (window.parent === window) {
-    console.debug('[Assistant Bridge]', payload.eventType, payload);
-    return;
-  }
-  window.parent.postMessage({ type: 'ASSISTANT_GAME_EVENT', payload }, '*');
 }
 
 function loadScoreState() {
@@ -282,16 +278,25 @@ function flushScoreToPortal() {
     const { stats: latestStats, ...restPatch } = patch;
     cachedPortalGameData = deepMerge(cachedPortalGameData, restPatch);
     cachedPortalGameData.stats = latestStats;
-    sendToPortal({
-      gameId: GAME_ID,
-      eventType: 'score_update',
-      score: Math.max(0, Math.round(safeNumeric(moduleScores.alignment))),
-      highScore: Math.max(0, Math.round(bestAlignmentScore)),
-      additionalContext: {
-        source: lastScoreContext.source,
+
+    const alignCurr = Math.max(0, Math.round(safeNumeric(moduleScores.alignment)));
+    const alignBest = Math.max(0, Math.round(bestAlignmentScore));
+
+    if (window.parent === window) {
+      console.debug('[Assistant Bridge]', 'STEM_PORTAL_GAME_DATA', alignCurr, cachedPortalGameData);
+    } else {
+      // Portal / leaderboards only — do not use ASSISTANT_GAME_EVENT here; the
+      // hub forwards those to web assistants and they narrate score/gameData.
+      postRawToParent({
+        type: 'STEM_PORTAL_GAME_DATA',
+        gameId: GAME_ID,
+        dataJson: cachedPortalGameData,
         gameData: cachedPortalGameData,
-      },
-    });
+        score: alignCurr,
+        highScore: alignBest,
+        scoreSource: lastScoreContext.source,
+      });
+    }
     try {
       globalThis.dispatchEvent?.(new CustomEvent('mma:score-bests-updated'));
     } catch {

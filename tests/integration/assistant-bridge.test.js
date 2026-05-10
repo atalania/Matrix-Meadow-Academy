@@ -5,6 +5,11 @@ function lastAssistantPayload(postMessage) {
   return msgs.at(-1)?.payload;
 }
 
+function lastStemPortalGameData(postMessage) {
+  const msgs = postMessage.mock.calls.map((c) => c[0]).filter((m) => m?.type === 'STEM_PORTAL_GAME_DATA');
+  return msgs.at(-1);
+}
+
 function portalIframeWindow(postMessage) {
   return {
     parent: { postMessage },
@@ -118,24 +123,32 @@ describe('assistant-bridge portal handshake', () => {
       expect(postMessage.mock.calls[1][0].payload.hintCount).toBe(2);
     });
 
-    it('posts score_update with leaderboard-friendly gameData fields', async () => {
+    it('posts STEM_PORTAL_GAME_DATA (not ASSISTANT_GAME_EVENT) with leaderboard-friendly gameData', async () => {
       await bridge.onScoreUpdate({
         source: 'alignment',
         score: 123,
         stats: { levelReached: 4 },
       });
 
-      const p = lastAssistantPayload(postMessage);
-      expect(p.eventType).toBe('score_update');
-      expect(p.score).toBe(123);
-      expect(p.highScore).toBe(123);
-      expect(p.additionalContext.gameData.highScore).toBe(123);
-      expect(p.additionalContext.gameData.score).toBe(123);
-      expect(p.additionalContext.gameData.matrixMeadow.highScore).toBe(123);
-      expect(p.additionalContext.gameData.matrixMeadow.score).toBe(123);
-      expect(p.additionalContext.gameData.matrixMeadow.multiplicationDrill.highScore).toBe(0);
-      expect(p.additionalContext.gameData.matrixMeadow.vocabularyQuiz.highScore).toBe(0);
-      expect(p.additionalContext.gameData.stats).toEqual({ levelReached: 4 });
+      const stem = lastStemPortalGameData(postMessage);
+      expect(stem).toBeDefined();
+      expect(stem.type).toBe('STEM_PORTAL_GAME_DATA');
+      expect(stem.score).toBe(123);
+      expect(stem.highScore).toBe(123);
+      expect(stem.scoreSource).toBe('alignment');
+      const gd = stem.dataJson;
+      expect(gd.highScore).toBe(123);
+      expect(gd.score).toBe(123);
+      expect(gd.matrixMeadow.highScore).toBe(123);
+      expect(gd.matrixMeadow.score).toBe(123);
+      expect(gd.matrixMeadow.multiplicationDrill.highScore).toBe(0);
+      expect(gd.matrixMeadow.vocabularyQuiz.highScore).toBe(0);
+      expect(gd.stats).toEqual({ levelReached: 4 });
+
+      const assistantScore = postMessage.mock.calls
+        .map((c) => c[0])
+        .filter((m) => m?.type === 'ASSISTANT_GAME_EVENT' && m?.payload?.eventType === 'score_update');
+      expect(assistantScore).toHaveLength(0);
     });
 
     it('reports rounded elapsed seconds since level start', () => {
@@ -201,13 +214,13 @@ describe('assistant-bridge portal handshake', () => {
         score: 25,
         stats: { perfectRounds: 1 },
       });
-      const payload = lastAssistantPayload(postMessage);
-      expect(payload.eventType).toBe('score_update');
+      const payload = lastStemPortalGameData(postMessage);
+      expect(payload.type).toBe('STEM_PORTAL_GAME_DATA');
       expect(payload.score).toBe(150);
       expect(payload.highScore).toBe(150);
-      expect(payload.additionalContext.gameData.matrixMeadow.multiplicationDrill.highScore).toBe(50);
-      expect(payload.additionalContext.gameData.matrixMeadow.vocabularyQuiz.highScore).toBe(25);
-      expect(payload.additionalContext.source).toBe('quiz');
+      expect(payload.scoreSource).toBe('quiz');
+      expect(payload.dataJson.matrixMeadow.multiplicationDrill.highScore).toBe(50);
+      expect(payload.dataJson.matrixMeadow.vocabularyQuiz.highScore).toBe(25);
     });
 
     it('falls back to empty score state when persisted JSON is invalid', async () => {
@@ -221,7 +234,7 @@ describe('assistant-bridge portal handshake', () => {
       ({ bridge } = await import('../../js/assistant-bridge.js'));
 
       await bridge.onScoreUpdate({ source: 'alignment', score: 40, stats: {} });
-      const payload = lastAssistantPayload(postMessage);
+      const payload = lastStemPortalGameData(postMessage);
       expect(payload.score).toBe(40);
       expect(payload.highScore).toBe(40);
     });

@@ -66,7 +66,7 @@ The build uses `base: /staticGames/matrix-meadow/` (from [data/game.json](data/g
 
 ### Portal `data_json` (leaderboards)
 
-The iframe requests existing persisted JSON from the parent, **deep-merges** score fields, then sends the merged object on each `score_update` as `additionalContext.gameData` (same shape the STEM Games portal stores as `data_json` for `slug=matrix-meadow`). Request (child → parent):
+The iframe requests existing persisted JSON from the parent, **deep-merges** score fields, then pushes the merged object on each score flush as **`STEM_PORTAL_GAME_DATA`** (`dataJson` / `gameData`, plus root `score` / `highScore` for the Monster Alignment track and `scoreSource` for which tab last wrote stats). This is **not** sent as `ASSISTANT_GAME_EVENT` so hub web assistants are not fed raw leaderboard JSON (they were narrating points instead of math). Request (child → parent):
 
 `{ type: 'PORTAL_GAME_DATA_REQUEST', gameId: 'matrix-meadow', requestId: string }`
 
@@ -80,7 +80,7 @@ The parent may push or reply with any of: `PORTAL_GAME_DATA`, `PORTAL_GAME_DATA_
 | **Multiplication drill** | Rolling best and current drill tab score | `matrixMeadow.multiplicationDrill.highScore`, `matrixMeadow.multiplicationDrill.score`, mirrors `matrixMeadow.drill.*`, root `multiplicationDrillHighScore`, `drillHighScore` |
 | **Vocabulary quiz** | Rolling best and current quiz tab score | `matrixMeadow.vocabularyQuiz.highScore`, `matrixMeadow.vocabularyQuiz.score`, mirrors `matrixMeadow.vocabQuiz.*`, root `vocabularyQuizHighScore`, `vocabQuizHighScore` |
 
-Also set each time: `lastPlayedAt` (ISO string), and `stats` (object from the module that triggered the last `score_update`).
+Also set each time: `lastPlayedAt` (ISO string), and `stats` (object from the module that triggered the last score flush).
 
 Overall root scores **do not** change when only the drill or quiz tab updates; those modes only refresh their own nested keys and mirrors.
 
