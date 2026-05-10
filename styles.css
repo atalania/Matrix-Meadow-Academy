@@ -378,6 +378,26 @@ body {
   }
 }
 
+/* Short desktop iframes need an internal scroll instead of clipped content. */
+@media (min-width: 1100px) and (pointer: fine) and (max-height: 760px) {
+  #app {
+    overflow-y: auto;
+    padding-bottom: 28px;
+    scrollbar-width: thin;
+  }
+  #tab-alignment #canvas-wrap {
+    height: clamp(260px, 43vh, 390px);
+  }
+  #tab-drill > .panel .concept {
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  #tab-drill .panel,
+  #tab-alignment .panel {
+    scroll-margin-top: 12px;
+  }
+}
+
 .solve-guide{
   margin-bottom:14px;
   padding:12px;
