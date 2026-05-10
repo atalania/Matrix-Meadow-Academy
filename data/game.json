@@ -2,8 +2,10 @@
   "game-id": "matrix-meadow",
   "title": "Matrix Meadow Academy",
   "subject": "Mathematics",
-  "description":
-    "Practice matrix multiplication through interactive monster scaling challenges and AI-assisted feedback.",
+  "description": "Practice matrix multiplication through interactive monster scaling challenges and AI-assisted feedback.",
+  "assistant-target-concept": "matrix_uniform_scaling",
+  "assistant-tutor-brief": "Players edit a 2×2 matrix with four number inputs, then Apply or Preview. The canvas shows two monsters: your transform (cyan) vs the dashed target (red). Match the target by choosing entries a,b,c,d so each point (x,y) maps to (a·x+b·y, c·x+d·y). The Drill tab fills a product grid for C=A×B with dot-product hints. The Quiz tab is multiple-choice vocabulary.",
+  "assistant-mistake-guide": "• Alignment — Shear vs scale: using only diagonals when the target is slanted (shear uses b or c; area can stay ~1). • Entry order: same four numbers as the target but wrong layout (correct multiset, wrong positions) so the wrong vertex moves. • Composition: multiplying transformation matrices in the wrong order (remember which transform is applied first vs matrix product notation). • Inverse: flipping which diagonal gets 1/a vs 1/b or transposing the inverse. • Determinant levels: right magnitude but wrong sign (orientation), or det≈0 (collapsed). • Drill — Row×column rule: for C[i][j] you must dot row i of A with column j of B, not row×row or column×column. • Sign errors when summing products of negatives in the dot breakdown. • Off-by-one cell when almost all entries match. • Quiz — Confusing definitions (e.g. eigenvector vs invertible vs trace), misreading orthogonal vs symmetric.",
   "longDescription": [
     "Matrix Meadow Academy turns matrix multiplication into a visual monster-scaling challenge where students learn by transforming creatures directly on screen. Instead of solving problems in isolation, players apply matrices to match target shapes, making abstract linear algebra feel more concrete and intuitive.",
     "The game focuses on core ideas like scaling transformations, matrix structure, and the relationship between numerical input and visual output. By tying each problem to an immediate visual result, students can better understand how matrix multiplication changes size and form rather than treating it as pure symbol manipulation.",

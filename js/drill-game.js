@@ -5,8 +5,15 @@
 
 import { randomMatrix, multiplyMatrices } from './math-engine.js';
 import { setFeedback, matrixToTable } from './ui.js';
-import { bridge } from './assistant-bridge.js';
-import { drillRangeNumber, parseDrillIntegerCell, gradeDrillMatrices } from './drill-logic.js';
+import { bridge, setStemAssistantLevel } from './assistant-bridge.js';
+import {
+  drillRangeNumber,
+  parseDrillIntegerCell,
+  gradeDrillMatrices,
+  drillDifficultyMultiplier,
+  drillStreakScoreBonus,
+  drillNearMissBonusPoints,
+} from './drill-logic.js';
 
 // ---------------------------------------------------------------------------
 // State
@@ -57,8 +64,10 @@ function newDrill() {
   startTimer();
 
   // Notify assistant
+  const drillLevelId = `drill_${state.size}x${state.size}`;
+  setStemAssistantLevel(drillLevelId, 'matrix_multiplication_drill');
   bridge.resetProblem();
-  bridge.onLevelStart(`drill-${state.size}x${state.size}`, 'matrix_multiplication_drill');
+  bridge.onLevelStart(drillLevelId, 'matrix_multiplication_drill');
 }
 
 // ---------------------------------------------------------------------------
@@ -151,18 +160,48 @@ function drillCheck() {
     }
   }
 
+  const mult = drillDifficultyMultiplier(state.size, state.range);
+
   if (allOk) {
     clearTimer();
     state.settled = true;
     state.streak++;
     state.best = Math.max(state.best, state.streak);
-    state.score = Math.max(0, state.score + 10);
-    setFeedback('dfb', 'ok', '✅', `All ${total} entries correct! +10 pts`);
+    const base = Math.round(10 * mult);
+    const streakExtra = drillStreakScoreBonus(state.streak);
+    const gained = base + streakExtra;
+    state.score = Math.max(0, state.score + gained);
+    setFeedback('dfb', 'ok', '✅',
+      `All ${total} entries correct! +${gained} pts (×${mult.toFixed(2)} grid${streakExtra ? `, +${streakExtra} streak` : ''}).`);
 
     bridge.onCorrect({
-      levelId: `drill-${state.size}x${state.size}`,
+      levelId: `drill_${state.size}x${state.size}`,
       concept: 'matrix_multiplication_drill',
       playerAnswer: JSON.stringify(user),
+    });
+  } else if (correct === total - 1) {
+    state.streak = 0;
+    const partial = drillNearMissBonusPoints(mult);
+    state.score = Math.max(0, state.score + partial);
+    setFeedback('dfb', 'info', '🎯',
+      `So close — ${correct}/${total} correct. Near-miss +${partial} pts (one cell off).`);
+
+    bridge.onIncorrect({
+      levelId: `drill_${state.size}x${state.size}`,
+      concept: 'matrix_multiplication_drill',
+      playerAnswer: JSON.stringify(user),
+      correctAnswer: JSON.stringify(state.C),
+      mistakeCategory: 'near_miss_one_cell',
+      additionalContext: {
+        mode: 'multiplication_drill',
+        gridSize: state.size,
+        numberRange: state.range,
+        timerMode: state.timerMode,
+        correctCells: correct,
+        totalCells: total,
+        wrongEntries,
+        nearMiss: true,
+      },
     });
   } else {
     state.streak = 0;
@@ -170,16 +209,24 @@ function drillCheck() {
     setFeedback('dfb', 'err', '❌', `${correct}/${total} correct. −3 pts.`);
 
     bridge.onIncorrect({
-      levelId: `drill-${state.size}x${state.size}`,
+      levelId: `drill_${state.size}x${state.size}`,
       concept: 'matrix_multiplication_drill',
       playerAnswer: JSON.stringify(user),
       correctAnswer: JSON.stringify(state.C),
       mistakeCategory: 'dot_product_miscalculation',
-      extra: { wrongEntries, correctCount: correct, totalCount: total },
+      additionalContext: {
+        mode: 'multiplication_drill',
+        gridSize: state.size,
+        numberRange: state.range,
+        timerMode: state.timerMode,
+        correctCells: correct,
+        totalCells: total,
+        wrongEntries,
+      },
     });
   }
 
-  bridge.onScoreUpdate({
+  void bridge.onScoreUpdate({
     source: 'drill',
     score: state.score,
     stats: {
@@ -187,12 +234,14 @@ function drillCheck() {
       bestDrillStreak: state.best,
       timerMode: state.timerMode,
     },
+  }).then(() => {
+    setText('d-score', state.score);
+    setText('d-streak', state.streak);
+    setText('d-best', state.best);
+    const tb = bridge.getTrackBests?.();
+    if (tb) setText('d-high', tb.drillBest);
+    buildDotHint();
   });
-
-  setText('d-score', state.score);
-  setText('d-streak', state.streak);
-  setText('d-best', state.best);
-  buildDotHint();
 }
 
 function drillReveal(fromTimeout = false) {
@@ -222,7 +271,7 @@ function drillReveal(fromTimeout = false) {
 
   if (fromTimeout) {
     bridge.onTimeout({
-      levelId: `drill-${state.size}x${state.size}`,
+      levelId: `drill_${state.size}x${state.size}`,
       concept: 'matrix_multiplication_drill',
       correctAnswer: JSON.stringify(state.C),
     });
@@ -267,16 +316,19 @@ function startTimer() {
     if (state.timeLeft <= 0) {
       state.timeLeft = 0;
       updateTimerFill();
-      state.score = Math.max(0, state.score - 1);
       setText('d-score', state.score);
-      bridge.onScoreUpdate({
+      void bridge.onScoreUpdate({
         source: 'drill',
         score: state.score,
         stats: {
           drillSize: state.size,
           bestDrillStreak: state.best,
           timerMode: state.timerMode,
+          timedOut: true,
         },
+      }).then(() => {
+        const tb = bridge.getTrackBests?.();
+        if (tb) setText('d-high', tb.drillBest);
       });
       drillReveal(true);
     } else {

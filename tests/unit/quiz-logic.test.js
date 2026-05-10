@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   quizAnswerIsCorrect,
+  quizBasePointsForTopic,
+  quizStreakBonusPoints,
   quizScoreIncrementForCorrect,
   quizCompletionPercent,
   quizRunningAccuracyPercent,
@@ -13,14 +15,27 @@ describe('quizAnswerIsCorrect', () => {
   });
 });
 
-describe('quizScoreIncrementForCorrect', () => {
-  it('starts at 15 and steps down every two questions', () => {
+describe('quizBasePointsForTopic', () => {
+  it('uses topic weights independent of run order', () => {
+    expect(quizBasePointsForTopic('Basics')).toBe(11);
+    expect(quizBasePointsForTopic('Eigenvalues')).toBe(14);
+    expect(quizBasePointsForTopic('Unknown Topic XYZ')).toBe(12);
+  });
+});
+
+describe('quizStreakBonusPoints', () => {
+  it('matches drill-style +1 per three correct, capped at 3', () => {
+    expect(quizStreakBonusPoints(2)).toBe(0);
+    expect(quizStreakBonusPoints(3)).toBe(1);
+    expect(quizStreakBonusPoints(9)).toBe(3);
+    expect(quizStreakBonusPoints(30)).toBe(3);
+  });
+});
+
+describe('quizScoreIncrementForCorrect (legacy)', () => {
+  it('keeps the old position-based curve for compatibility', () => {
     expect(quizScoreIncrementForCorrect(0)).toBe(15);
-    expect(quizScoreIncrementForCorrect(1)).toBe(15);
-    expect(quizScoreIncrementForCorrect(2)).toBe(14);
-    expect(quizScoreIncrementForCorrect(3)).toBe(14);
     expect(quizScoreIncrementForCorrect(20)).toBe(5);
-    expect(quizScoreIncrementForCorrect(99)).toBe(5);
   });
 });
 

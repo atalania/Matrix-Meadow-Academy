@@ -3,6 +3,9 @@ import {
   drillRangeNumber,
   parseDrillIntegerCell,
   gradeDrillMatrices,
+  drillDifficultyMultiplier,
+  drillStreakScoreBonus,
+  drillNearMissBonusPoints,
 } from '../../js/drill-logic.js';
 
 describe('drillRangeNumber', () => {
@@ -44,5 +47,30 @@ describe('gradeDrillMatrices', () => {
     const g = gradeDrillMatrices(M, M);
     expect(g.allOk).toBe(true);
     expect(g.wrongEntries).toHaveLength(0);
+  });
+});
+
+describe('drillDifficultyMultiplier', () => {
+  it('raises multiplier for harder range and 3×3', () => {
+    expect(drillDifficultyMultiplier(2, 'easy')).toBe(1);
+    expect(drillDifficultyMultiplier(2, 'med')).toBeGreaterThan(1);
+    expect(drillDifficultyMultiplier(3, 'hard')).toBeGreaterThan(drillDifficultyMultiplier(2, 'hard'));
+  });
+});
+
+describe('drillStreakScoreBonus', () => {
+  it('caps at +3 and steps every third clean streak', () => {
+    expect(drillStreakScoreBonus(1)).toBe(0);
+    expect(drillStreakScoreBonus(3)).toBe(1);
+    expect(drillStreakScoreBonus(6)).toBe(2);
+    expect(drillStreakScoreBonus(9)).toBe(3);
+    expect(drillStreakScoreBonus(99)).toBe(3);
+  });
+});
+
+describe('drillNearMissBonusPoints', () => {
+  it('scales with difficulty multiplier', () => {
+    expect(drillNearMissBonusPoints(1)).toBe(4);
+    expect(drillNearMissBonusPoints(1.3)).toBeGreaterThanOrEqual(5);
   });
 });

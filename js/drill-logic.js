@@ -35,3 +35,21 @@ export function gradeDrillMatrices(user, expected) {
   const total = n * n;
   return { correct, total, allOk: correct === total, wrongEntries };
 }
+
+/** Score multiplier from grid size and entry range (1.0 = 2×2 easy baseline). */
+export function drillDifficultyMultiplier(size, rangeKey) {
+  const rangeBoost = { easy: 0, med: 0.12, hard: 0.22 }[rangeKey] ?? 0.15;
+  const sizeBoost = Number(size) >= 3 ? 0.18 : 0;
+  return Math.round((1 + rangeBoost + sizeBoost) * 100) / 100;
+}
+
+/** Extra points on a clean solve: +1 at streak 3–5, +2 at 6–8, +3 from 9+ (capped). */
+export function drillStreakScoreBonus(streakAfterIncrement) {
+  return Math.min(3, Math.floor(Number(streakAfterIncrement) / 3));
+}
+
+/** Near-miss (exactly one wrong cell): small consolation scaled by difficulty. */
+export function drillNearMissBonusPoints(multiplier) {
+  const m = Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1;
+  return Math.max(2, Math.round(4 * m));
+}

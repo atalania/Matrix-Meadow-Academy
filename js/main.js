@@ -3,6 +3,7 @@
 // Entry point. Initializes all game modules and tab switching.
 // ============================================================================
 
+import { bridge } from './assistant-bridge.js';
 import { initAlignment } from './alignment-game.js';
 import { initDrill } from './drill-game.js';
 import { initQuiz } from './quiz-game.js';
@@ -14,6 +15,17 @@ import { initQuiz } from './quiz-game.js';
 let drillInitialized = false;
 const WELCOME_STORAGE_KEY = 'mma_welcome_seen_v1';
 let quizUnlocked = false;
+
+function refreshTrackHud() {
+  const b = bridge.getTrackBests();
+  const set = (id, v) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = String(v);
+  };
+  set('a-best', b.alignmentBest);
+  set('d-high', b.drillBest);
+  set('q-high', b.quizBest);
+}
 
 function activateTab(tabName) {
   if (tabName === 'quiz' && !quizUnlocked) {
@@ -33,6 +45,7 @@ function activateTab(tabName) {
     drillInitialized = true;
     window.newDrill?.();
   }
+  refreshTrackHud();
 }
 
 function setQuizUnlocked(unlocked) {
@@ -130,7 +143,9 @@ function initQuizUnlockGate() {
 // Boot
 // ---------------------------------------------------------------------------
 
-function boot() {
+async function boot() {
+  await bridge.bootstrapPortalGameData();
+  window.addEventListener('mma:score-bests-updated', refreshTrackHud);
   initQuizUnlockGate();
   initTabs();
   initAlignment();
@@ -138,10 +153,11 @@ function boot() {
   initQuiz();
   initWelcomeTutorial();
   initQuizLockModal();
+  refreshTrackHud();
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', boot);
+  document.addEventListener('DOMContentLoaded', () => void boot());
 } else {
-  boot();
+  void boot();
 }

@@ -27,10 +27,12 @@
   <!-- ══ TAB 1 — MONSTER ALIGNMENT ══ -->
   <div id="tab-alignment" class="tab-page active">
     <div class="stat-bar">
-      <div class="chip">🏅 Level <span id="a-lnum">1</span>/<span id="a-ltotal">8</span></div>
-      <div class="chip">✨ <span id="a-score">0</span> pts</div>
+      <div class="chip" title="Monster Alignment — leaderboard track">🏅 Level <span id="a-lnum">1</span>/<span id="a-ltotal">8</span></div>
+      <div class="chip" title="Current alignment session score">🎯 Score <span id="a-score">0</span></div>
+      <div class="chip" title="Best alignment score (this device / portal)">⭐ Best <span id="a-best">0</span></div>
+      <div class="chip" title="Apply clicks this level">↺ Tries <span id="a-attempts">0</span></div>
       <div class="chip">🔥 Streak <span id="a-streak">0</span></div>
-      <div class="chip">🎯 <span id="a-acc">—</span></div>
+      <div class="chip">✅ Acc <span id="a-acc">—</span></div>
       <div class="chip">⏱️ <span id="a-time">0:00</span></div>
     </div>
 
@@ -129,9 +131,10 @@
   <!-- ══ TAB 2 — MULTIPLICATION DRILL ══ -->
   <div id="tab-drill" class="tab-page">
     <div class="stat-bar">
-      <div class="chip">⚡ Score <span id="d-score">0</span></div>
-      <div class="chip">🔥 Streak <span id="d-streak">0</span></div>
-      <div class="chip">🏆 Best <span id="d-best">0</span></div>
+      <div class="chip" title="Drill session score">⚡ Score <span id="d-score">0</span></div>
+      <div class="chip" title="Drill high score (leaderboard track)">🏅 High <span id="d-high">0</span></div>
+      <div class="chip" title="Current clean-solve streak">🔥 Streak <span id="d-streak">0</span></div>
+      <div class="chip" title="Best streak this session">🏆 Streak best <span id="d-best">0</span></div>
       <div class="chip">⏱️ <span id="d-timer-disp">—</span></div>
     </div>
     <div class="panel" style="margin-bottom:14px;">
@@ -232,7 +235,8 @@ of a ROW of A with a COLUMN of B.
   <!-- ══ TAB 3 — VOCAB QUIZ ══ -->
   <div id="tab-quiz" class="tab-page">
     <div class="stat-bar">
-      <div class="chip">📚 Score <span id="q-score">0</span></div>
+      <div class="chip" title="Quiz session score">📚 Score <span id="q-score">0</span></div>
+      <div class="chip" title="Quiz high score (leaderboard track)">🏅 High <span id="q-high">0</span></div>
       <div class="chip">❓ Q <span id="q-num">1</span>/<span id="q-total">1</span></div>
       <div class="chip">🔥 Streak <span id="q-streak">0</span></div>
       <div class="chip">✅ <span id="q-correct">0</span> correct</div>
@@ -358,6 +362,7 @@ of a ROW of A with a COLUMN of B.
     <div class="tutor-top">
       <div class="tutor-mon" id="tm-mon">🎓</div>
       <div class="tutor-win">Level Complete!</div>
+      <div class="tutor-stars" id="tm-stars" aria-label="Round quality"></div>
       <div class="tutor-pts" id="tm-pts">+100 pts</div>
     </div>
     <div class="tutor-body">

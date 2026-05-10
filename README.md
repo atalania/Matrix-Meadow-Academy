@@ -64,6 +64,26 @@ The build uses `base: /staticGames/matrix-meadow/` (from [data/game.json](data/g
 | `js/assistant-bridge.js` | `postMessage` to parent frame (portal integration) |
 | `data/game.json` | Game id and metadata for embeds |
 
+### Portal `data_json` (leaderboards)
+
+The iframe requests existing persisted JSON from the parent, **deep-merges** score fields, then sends the merged object on each `score_update` as `additionalContext.gameData` (same shape the STEM Games portal stores as `data_json` for `slug=matrix-meadow`). Request (child → parent):
+
+`{ type: 'PORTAL_GAME_DATA_REQUEST', gameId: 'matrix-meadow', requestId: string }`
+
+The parent may push or reply with any of: `PORTAL_GAME_DATA`, `PORTAL_GAME_DATA_RESPONSE`, or `STEM_PORTAL_GAME_DATA`, carrying `dataJson` (or `gameData`, or `payload.dataJson`). Incoming objects are merged so unknown keys are preserved.
+
+**Numeric fields written by this game (higher is better):**
+
+| Track | Meaning | Paths set on each flush |
+|-------|---------|---------------------------|
+| **Overall** (Monster Alignment) | Rolling best and current alignment score | `highScore`, `score`, `matrixMeadow.highScore`, `matrixMeadow.score` |
+| **Multiplication drill** | Rolling best and current drill tab score | `matrixMeadow.multiplicationDrill.highScore`, `matrixMeadow.multiplicationDrill.score`, mirrors `matrixMeadow.drill.*`, root `multiplicationDrillHighScore`, `drillHighScore` |
+| **Vocabulary quiz** | Rolling best and current quiz tab score | `matrixMeadow.vocabularyQuiz.highScore`, `matrixMeadow.vocabularyQuiz.score`, mirrors `matrixMeadow.vocabQuiz.*`, root `vocabularyQuizHighScore`, `vocabQuizHighScore` |
+
+Also set each time: `lastPlayedAt` (ISO string), and `stats` (object from the module that triggered the last `score_update`).
+
+Overall root scores **do not** change when only the drill or quiz tab updates; those modes only refresh their own nested keys and mirrors.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for branch and commit conventions.

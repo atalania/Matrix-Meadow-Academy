@@ -5,10 +5,11 @@
 
 import { shuffle } from './math-engine.js';
 import { setFeedback } from './ui.js';
-import { bridge } from './assistant-bridge.js';
+import { bridge, setStemAssistantLevel } from './assistant-bridge.js';
 import {
   quizAnswerIsCorrect,
-  quizScoreIncrementForCorrect,
+  quizBasePointsForTopic,
+  quizStreakBonusPoints,
   quizCompletionPercent,
   quizRunningAccuracyPercent,
 } from './quiz-logic.js';
@@ -170,7 +171,8 @@ function renderQuestion() {
   buildProgress();
   updateStats();
 
-  // Reset bridge timer for this question
+  const qid = `quiz_q${state.idx + 1}`;
+  setStemAssistantLevel(qid, 'linear_algebra_vocabulary');
   bridge.resetProblem();
 }
 
@@ -195,29 +197,42 @@ function pickAnswer(idx, clickedBtn, shuffled) {
   if (correct) {
     state.streak++;
     state.correct++;
-    state.score += quizScoreIncrementForCorrect(state.idx);
-    setFeedback('qfb', 'ok', '✅', q.ex);
+    const base = quizBasePointsForTopic(q.t);
+    const streakExtra = quizStreakBonusPoints(state.streak);
+    const gained = base + streakExtra;
+    state.score += gained;
+    setFeedback('qfb', 'ok', '✅',
+      `${q.ex} (+${gained} pts: ${base} topic${streakExtra ? `, +${streakExtra} streak` : ''}).`);
 
     bridge.onCorrect({
-      levelId: `quiz-q${state.idx + 1}`,
+      levelId: `quiz_q${state.idx + 1}`,
       concept: 'linear_algebra_vocabulary',
       playerAnswer: q.ch[idx],
     });
   } else {
     state.streak = 0;
-    setFeedback('qfb', 'err', '❌', `Incorrect. ${q.ex}`);
+    state.score = Math.max(0, state.score - 1);
+    setFeedback('qfb', 'err', '❌', `Incorrect. −1 pt. ${q.ex}`);
 
     bridge.onIncorrect({
-      levelId: `quiz-q${state.idx + 1}`,
+      levelId: `quiz_q${state.idx + 1}`,
       concept: 'linear_algebra_vocabulary',
       playerAnswer: q.ch[idx],
       correctAnswer: q.ch[q.a],
       mistakeCategory: 'vocab_misconception',
-      extra: { topic: q.t, questionIndex: state.order[state.idx] },
+      additionalContext: {
+        mode: 'vocab_quiz',
+        topic: q.t,
+        questionBankIndex: state.order[state.idx],
+        runQuestionNumber: state.idx + 1,
+        chosenLabel: q.ch[idx],
+        correctLabel: q.ch[q.a],
+        choiceLabels: [...q.ch],
+      },
     });
   }
 
-  bridge.onScoreUpdate({
+  void bridge.onScoreUpdate({
     source: 'quiz',
     score: state.score,
     stats: {
@@ -225,14 +240,14 @@ function pickAnswer(idx, clickedBtn, shuffled) {
       correct: state.correct,
       topicCount: state.topicFilter.size,
     },
+  }).then(() => {
+    setText('q-score', state.score);
+    setText('q-streak', state.streak);
+    setText('q-correct', state.correct);
+    if (document.getElementById('qnext')) document.getElementById('qnext').disabled = false;
+    buildProgress();
+    updateStats();
   });
-
-  setText('q-score', state.score);
-  setText('q-streak', state.streak);
-  setText('q-correct', state.correct);
-  if (document.getElementById('qnext')) document.getElementById('qnext').disabled = false;
-  buildProgress();
-  updateStats();
 }
 
 function quizNext() {
@@ -246,8 +261,11 @@ function updateStats() {
   const total = state.order.length;
   const pct = quizRunningAccuracyPercent(state.correct, done);
   const el = document.getElementById('q-stats');
+  const bestQ = typeof bridge.getTrackBests === 'function' ? bridge.getTrackBests().quizBest : 0;
+  const bestEl = document.getElementById('q-high');
+  if (bestEl) bestEl.textContent = String(bestQ);
   if (el) {
-    el.innerHTML = `Questions answered: ${done}/${total}<br>Correct: ${state.correct}<br>Accuracy: ${pct}%<br>Score: ${state.score}<br>Streak: ${state.streak}`;
+    el.innerHTML = `Questions answered: ${done}/${total}<br>Correct: ${state.correct}<br>Accuracy: ${pct}%<br>Session score: ${state.score}<br>Streak: ${state.streak}<br><span style="font-size:11px;">Wrong answers cost 1 pt; topic sets base points (not order).</span>`;
   }
 }
 

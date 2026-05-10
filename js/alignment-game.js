@@ -9,7 +9,7 @@ import { checkAnswer, diagnoseMistake } from './alignment-logic.js';
 import { drawMonsterPNG, drawFallbackMonster, drawGrid, getImgState, onMonsterReady } from './monster-renderer.js';
 import { setFeedback, parseInputValue, spawnConfetti, clearConfetti } from './ui.js';
 import { askTutor } from './tutor.js';
-import { bridge } from './assistant-bridge.js';
+import { bridge, setStemAssistantLevel } from './assistant-bridge.js';
 
 // ---------------------------------------------------------------------------
 // State
@@ -36,6 +36,8 @@ const state = {
   timerStart: Date.now(),
   levelStart: Date.now(),
   lastPointsEarned: 0,
+  /** Set on each correct Apply for tutor “quality” row */
+  lastRoundQuality: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -211,7 +213,9 @@ function updatePresetAvailability() {
     const requiredLevel = Number(btn.getAttribute('data-req-level') || '0');
     const requiredIdx = requiredLevel - 1;
     const unlocked = Number.isInteger(requiredIdx) && requiredIdx >= 0 && state.done.includes(requiredIdx);
-    btn.disabled = !unlocked;
+    btn.dataset.locked = unlocked ? 'false' : 'true';
+    btn.classList.toggle('is-locked', !unlocked);
+    btn.setAttribute('aria-disabled', unlocked ? 'false' : 'true');
     btn.title = unlocked
       ? 'Unlocked preset'
       : `Unlock by completing Level ${requiredLevel}`;
@@ -222,9 +226,9 @@ function applyPreset(kind) {
   if (isAnimating()) return;
 
   const btn = document.querySelector(`.preset-btn[data-preset="${kind}"]`);
-  if (btn?.disabled) {
+  if (btn?.dataset.locked === 'true') {
     const requiredLevel = btn.getAttribute('data-req-level') || '?';
-    setFeedback('afb', 'info', '🔒', `This preset unlocks after you complete Level ${requiredLevel}.`);
+    setFeedback('afb', 'err', '🔒', `Unlock Level ${requiredLevel} first to use this preset.`);
     return;
   }
 
@@ -264,6 +268,8 @@ function loadLevel(idx) {
   const lv = state.levels[idx];
   if (!lv) return;
 
+  setStemAssistantLevel(`level_${idx + 1}`, lv.concept);
+
   // Update DOM
   setText('ltitle', lv.title);
   setText('ldesc', lv.desc);
@@ -291,7 +297,7 @@ function loadLevel(idx) {
   emitAlignmentProgress();
 
   // Notify assistant bridge
-  bridge.onLevelStart(`level-${idx + 1}`, lv.concept);
+  bridge.onLevelStart(`level_${idx + 1}`, lv.concept);
 }
 
 function setText(id, text) {
@@ -325,6 +331,9 @@ function applyMatrix() {
       state.streak++;
       state.bestStreak = Math.max(state.bestStreak, state.streak);
       state.totalCorrect++;
+      const quickSolveSeconds = Math.floor((Date.now() - state.levelStart) / 1000);
+      state.lastRoundQuality = alignmentRoundQuality(quickSolveSeconds, state.attempts, state.streak);
+
       const pts = scoreForCorrectAttempt();
       state.lastPointsEarned = pts;
       state.score += pts;
@@ -334,17 +343,21 @@ function applyMatrix() {
       updatePresetAvailability();
       emitAlignmentProgress();
 
-      setFeedback('afb', 'ok', '🎉', 'Correct! Monster perfectly aligned!');
+      const q = state.lastRoundQuality;
+      const starHint = q
+        ? ` Speed ${renderStars(q.speedStars)} · Tries ${renderStars(q.attStars)} · Streak ${renderStars(q.streakStars)}`
+        : '';
+      setFeedback('afb', 'ok', '🎉', `Correct! Monster perfectly aligned!${starHint}`);
       updateStats();
 
       // Notify assistant
       bridge.onCorrect({
-        levelId: `level-${state.lvl + 1}`,
+        levelId: `level_${state.lvl + 1}`,
         concept: lv.concept,
         playerAnswer: `[[${M.a},${M.b}],[${M.c},${M.d}]]`,
       });
-      bridge.onLevelComplete({ levelId: `level-${state.lvl + 1}`, concept: lv.concept });
-      bridge.onScoreUpdate({
+      bridge.onLevelComplete({ levelId: `level_${state.lvl + 1}`, concept: lv.concept });
+      void bridge.onScoreUpdate({
         source: 'alignment',
         score: state.score,
         stats: {
@@ -353,7 +366,7 @@ function applyMatrix() {
           totalCorrect: state.totalCorrect,
           totalAttempts: state.totalAttempts,
         },
-      });
+      }).then(() => updateStats());
 
       setTimeout(showTutorModal, 400);
     } else {
@@ -367,17 +380,27 @@ function applyMatrix() {
       // Notify assistant — identify mistake type
       const mistakeCategory = diagnoseMistake(M, lv);
       bridge.onIncorrect({
-        levelId: `level-${state.lvl + 1}`,
+        levelId: `level_${state.lvl + 1}`,
         concept: lv.concept,
         playerAnswer: `[[${M.a},${M.b}],[${M.c},${M.d}]]`,
         correctAnswer: `[[${lv.target.a},${lv.target.b}],[${lv.target.c},${lv.target.d}]]`,
         mistakeCategory,
-        extra: { attempts: state.attempts, det: M.det() },
+        additionalContext: {
+          mode: 'monster_alignment',
+          levelIndex: state.lvl,
+          levelTitle: lv.title,
+          validate: lv.validate,
+          transformObjective: lv.obj,
+          attemptsThisLevel: state.attempts,
+          playerDet: M.det(),
+          targetDet: lv.target.det(),
+          internalDiagnosis: mistakeCategory,
+        },
       });
 
       persistState();
       updateStats();
-      bridge.onScoreUpdate({
+      void bridge.onScoreUpdate({
         source: 'alignment',
         score: state.score,
         stats: {
@@ -386,16 +409,39 @@ function applyMatrix() {
           totalCorrect: state.totalCorrect,
           totalAttempts: state.totalAttempts,
         },
-      });
+      }).then(() => updateStats());
     }
   });
+}
+
+/** Speed bonus tapers hard in the first 45s, then slowly after that. */
+function taperedSpeedBonus(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  if (s <= 45) {
+    return Math.max(0, 24 - Math.floor(s / 5));
+  }
+  const at45 = Math.max(0, 24 - Math.floor(45 / 5));
+  return Math.max(0, at45 - Math.floor((s - 45) / 10));
+}
+
+/** 1–3 stars each for speed, attempts, streak (shown after a clear). */
+function alignmentRoundQuality(quickSolveSeconds, attemptsUsed, streakAfterSolve) {
+  const speedStars = quickSolveSeconds <= 22 ? 3 : quickSolveSeconds <= 50 ? 2 : 1;
+  const attStars = attemptsUsed <= 1 ? 3 : attemptsUsed <= 3 ? 2 : 1;
+  const streakStars = streakAfterSolve >= 4 ? 3 : streakAfterSolve >= 2 ? 2 : 1;
+  return { speedStars, attStars, streakStars };
+}
+
+function renderStars(n) {
+  const c = Math.max(0, Math.min(3, Math.round(Number(n)) || 0));
+  return `${'★'.repeat(c)}${'☆'.repeat(3 - c)}`;
 }
 
 function scoreForCorrectAttempt() {
   const quickSolveSeconds = Math.floor((Date.now() - state.levelStart) / 1000);
   const base = 70;
   const attemptBonus = Math.max(0, 28 - (state.attempts - 1) * 10);
-  const speedBonus = Math.max(0, 24 - Math.floor(quickSolveSeconds / 5));
+  const speedBonus = taperedSpeedBonus(quickSolveSeconds);
   const streakBonus = Math.min(18, state.streak * 3);
   return Math.max(12, base + attemptBonus + speedBonus + streakBonus);
 }
@@ -445,6 +491,9 @@ function updateLevelDots() {
 function updateStats() {
   setText('a-score', state.score);
   setText('a-streak', state.streak);
+  setText('a-attempts', String(state.attempts));
+  const b = typeof bridge.getTrackBests === 'function' ? bridge.getTrackBests() : null;
+  if (b) setText('a-best', String(b.alignmentBest));
 
   const accEl = document.getElementById('a-acc');
   if (accEl) {
@@ -461,7 +510,21 @@ function updateStats() {
 function showTutorModal() {
   const lv = state.levels[state.lvl];
   setText('tm-mon', '🎓');
-  setText('tm-pts', `+${state.lastPointsEarned} pts earned`);
+  const q = state.lastRoundQuality;
+  const starsEl = document.getElementById('tm-stars');
+  if (starsEl) {
+    if (q) {
+      starsEl.innerHTML = `
+        <div class="quality-grid">
+          <div><span class="qlab">Speed</span><span class="qstars">${renderStars(q.speedStars)}</span></div>
+          <div><span class="qlab">Tries</span><span class="qstars">${renderStars(q.attStars)}</span></div>
+          <div><span class="qlab">Streak</span><span class="qstars">${renderStars(q.streakStars)}</span></div>
+        </div>`;
+    } else {
+      starsEl.innerHTML = '';
+    }
+  }
+  setText('tm-pts', `+${state.lastPointsEarned} pts (speed tapers gently after ~45s on the clock)`);
   const qEl = document.getElementById('tm-question');
   if (qEl) qEl.textContent = lv.tutorQ;
   const aEl = document.getElementById('tm-answer');
@@ -564,7 +627,7 @@ export function initAlignment() {
     }
   }
   state.levels = buildLevels();
-  bridge.onScoreUpdate({
+  void bridge.onScoreUpdate({
     source: 'alignment',
     score: state.score,
     stats: {
@@ -573,7 +636,7 @@ export function initAlignment() {
       totalCorrect: state.totalCorrect,
       totalAttempts: state.totalAttempts,
     },
-  });
+  }).then(() => updateStats());
 
   // Canvas
   resizeCanvas();

@@ -1,0 +1,10 @@
+{
+  "name": "stem-assistant-bridge",
+  "version": "1.0.0",
+  "description": "STEM Games hub web assistant bridge (postMessage wrapper). In the portal monorepo, depend on file:../../packages/stem-assistant-bridge (path from game root). This copy is vendored for standalone matrix-meadow; prefer hub semver when published.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}

@@ -148,9 +148,9 @@ body {
   background:#ecf6ff;
   border-color:#b8cfe8;
 }
-.preset-btn:disabled{
+.preset-btn.is-locked{
   opacity:.5;
-  cursor:not-allowed;
+  cursor:pointer;
   transform:none;
   background:#f4f6f9;
   border-color:#d8e0ea;
@@ -213,7 +213,11 @@ body {
 .tutor-top{padding:28px 28px 18px;text-align:center;border-bottom:2px solid #f0f0f0;}
 .tutor-mon{font-size:64px;animation:bob .6s ease infinite alternate;margin-bottom:8px;}
 .tutor-win{font-family:'Fredoka One',cursive;font-size:28px;color:var(--accent3);}
-.tutor-pts{font-size:14px;color:var(--muted);margin-top:4px;}
+.tutor-stars{margin-top:10px;padding:0 12px;}
+.quality-grid{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:center;font-size:12px;font-weight:800;color:var(--muted);}
+.quality-grid .qlab{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#8892a0;margin-bottom:2px;}
+.quality-grid .qstars{font-size:15px;color:#e9a319;letter-spacing:1px;}
+.tutor-pts{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.45;}
 .tutor-body{padding:20px 28px 28px;}
 .tutor-q-label{font-family:'Fredoka One',cursive;font-size:16px;color:#5c35a8;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
 .tutor-question{font-size:14px;color:var(--text);line-height:1.6;background:#f8f4ff;border-radius:12px;padding:12px 14px;border:2px solid #c77dff33;margin-bottom:12px;}
