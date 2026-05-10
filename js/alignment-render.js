@@ -22,11 +22,13 @@ export function setAlignmentCanvas(c, context2d) {
 export function resizeCanvas() {
   if (!canvas) return;
   const dpr = window.devicePixelRatio || 1;
-  const w = canvas.parentElement.getBoundingClientRect().width || 420;
+  const wrapRect = canvas.parentElement.getBoundingClientRect();
+  const w = wrapRect.width || 420;
+  const h = wrapRect.height || 370;
   canvas.width = w * dpr;
-  canvas.height = 370 * dpr;
+  canvas.height = h * dpr;
   canvas.style.width = w + 'px';
-  canvas.style.height = '370px';
+  canvas.style.height = h + 'px';
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
 }

@@ -38,32 +38,81 @@
 
     <div class="level-bar" id="ldots"></div>
 
-    <div class="game-layout">
-      <div class="left-col">
-        <div class="panel">
-          <div class="panel-title"><span class="ico">🎮</span> Monster Preview</div>
-          <div id="canvas-wrap">
-            <canvas id="gc" width="420" height="370"></canvas>
-            <div id="canvas-loading" class="canvas-loading">Loading monster...</div>
+    <div class="game-layout alignment-layout">
+      <div class="panel alignment-play-panel">
+        <div class="alignment-play-grid">
+          <div class="monster-stage">
+            <div class="panel-title"><span class="ico">🎮</span> Monster Preview</div>
+            <div id="canvas-wrap">
+              <canvas id="gc" width="420" height="370"></canvas>
+              <div id="canvas-loading" class="canvas-loading">Loading monster...</div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:10px;font-size:12px;font-weight:800;flex-wrap:wrap;">
+              <span style="display:flex;align-items:center;gap:4px;">
+                <span style="width:12px;height:12px;background:#48cae4;border-radius:50%;display:inline-block;"></span>Current
+              </span>
+              <span style="display:flex;align-items:center;gap:4px;">
+                <span style="width:12px;height:12px;background:#ff6b6b;border-radius:50%;display:inline-block;border:2px dashed #c0392b;"></span>Target
+              </span>
+              <span id="det-display" style="margin-left:auto;font-size:11px;color:var(--muted);"></span>
+            </div>
           </div>
-          <div style="display:flex;gap:12px;margin-top:10px;font-size:12px;font-weight:800;flex-wrap:wrap;">
-            <span style="display:flex;align-items:center;gap:4px;">
-              <span style="width:12px;height:12px;background:#48cae4;border-radius:50%;display:inline-block;"></span>Current
-            </span>
-            <span style="display:flex;align-items:center;gap:4px;">
-              <span style="width:12px;height:12px;background:#ff6b6b;border-radius:50%;display:inline-block;border:2px dashed #c0392b;"></span>Target
-            </span>
-            <span id="det-display" style="margin-left:auto;font-size:11px;color:var(--muted);"></span>
+
+          <div class="matrix-stage">
+            <div class="panel-title"><span class="ico">✏️</span> Transform Matrix</div>
+            <div class="mwrap">
+              <span class="mbrak">[</span>
+              <div class="mgrid">
+                <input class="mcell" id="i00" type="number" step="any" inputmode="decimal" placeholder="?">
+                <input class="mcell" id="i01" type="number" step="any" inputmode="decimal" placeholder="?">
+                <input class="mcell" id="i10" type="number" step="any" inputmode="decimal" placeholder="?">
+                <input class="mcell" id="i11" type="number" step="any" inputmode="decimal" placeholder="?">
+              </div>
+              <span class="mbrak">]</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px;">
+              det = <strong id="live-det">—</strong> &nbsp;|&nbsp; Enter = Apply
+            </div>
+            <div class="brow">
+              <button id="btn-apply" class="btn bp" onclick="applyMatrix()">▶ Apply</button>
+              <button id="btn-preview" class="btn bs" onclick="previewMatrix()">👁 Preview</button>
+              <button id="btn-reset" class="btn bg" onclick="resetLevel()">↺ Reset</button>
+            </div>
+            <div class="fb empty" id="afb">
+              <span class="fb-ico">🌟</span><span>Fill in the matrix and click Apply!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel alignment-info-panel">
+        <div class="panel-title"><span class="ico">📚</span> Learning Tools</div>
+        <div class="info-tab-bar" role="tablist" aria-label="Alignment learning tools">
+          <button class="info-tab-btn active" type="button" role="tab" aria-selected="true" aria-controls="info-level" data-info-tab="level">Level</button>
+          <button class="info-tab-btn" type="button" role="tab" aria-selected="false" aria-controls="info-formula" data-info-tab="formula">Formula</button>
+          <button class="info-tab-btn" type="button" role="tab" aria-selected="false" aria-controls="info-experiment" data-info-tab="experiment">Experiment</button>
+          <button class="info-tab-btn" type="button" role="tab" aria-selected="false" aria-controls="info-hint" data-info-tab="hint">Hint</button>
+        </div>
+
+        <div class="info-tab-panel active" id="info-level" role="tabpanel" data-info-panel="level">
+          <div class="linfo">
+            <div class="ltitle" id="ltitle">Level 1</div>
+            <div class="ldesc" id="ldesc">—</div>
+            <div class="lobj" id="lobj">—</div>
+          </div>
+          <div class="solve-guide">
+            <div class="mlabel">🧭 Explore Prompt</div>
+            <div class="solve-guide-body" id="solve-guide-txt"></div>
           </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-title"><span class="ico">📐</span> Formula Reference</div>
+        <div class="info-tab-panel" id="info-formula" role="tabpanel" data-info-panel="formula" hidden>
+          <div class="mlabel">📐 Formula Reference</div>
           <div class="concept" id="concept-txt"></div>
         </div>
 
-        <div class="panel">
-          <div class="panel-title"><span class="ico">🧪</span> Quick Experiment Pad</div>
+        <div class="info-tab-panel" id="info-experiment" role="tabpanel" data-info-panel="experiment" hidden>
+          <div class="mlabel">🧪 Quick Experiment Pad</div>
           <div class="preset-row">
             <button class="preset-btn" data-preset="scale2" data-req-level="1" onclick="applyPreset('scale2')">Scale x2</button>
             <button class="preset-btn" data-preset="shear" data-req-level="3" onclick="applyPreset('shear')">Shear</button>
@@ -80,50 +129,11 @@
             <div class="legend-item"><strong>det &lt; 0</strong><span>Orientation flipped</span></div>
           </div>
         </div>
-      </div>
 
-      <div class="right-col">
-        <div class="panel">
-          <div class="linfo">
-            <div class="ltitle" id="ltitle">Level 1</div>
-            <div class="ldesc" id="ldesc">—</div>
-            <div class="lobj" id="lobj">—</div>
-          </div>
-          <div class="solve-guide">
-            <div class="mlabel">🧭 Explore Prompt</div>
-            <div class="solve-guide-body" id="solve-guide-txt"></div>
-          </div>
-          <div style="margin-bottom:16px;">
-            <div class="mlabel">✏️ Your Transformation Matrix</div>
-            <div class="mwrap">
-              <span class="mbrak">[</span>
-              <div class="mgrid">
-                <input class="mcell" id="i00" type="number" step="any" inputmode="decimal" placeholder="?">
-                <input class="mcell" id="i01" type="number" step="any" inputmode="decimal" placeholder="?">
-                <input class="mcell" id="i10" type="number" step="any" inputmode="decimal" placeholder="?">
-                <input class="mcell" id="i11" type="number" step="any" inputmode="decimal" placeholder="?">
-              </div>
-              <span class="mbrak">]</span>
-            </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:6px;">
-              det = <strong id="live-det">—</strong> &nbsp;|&nbsp; Enter = Apply
-            </div>
-          </div>
-          <div class="brow">
-            <button id="btn-apply" class="btn bp" onclick="applyMatrix()">▶ Apply</button>
-            <button id="btn-preview" class="btn bs" onclick="previewMatrix()">👁 Preview</button>
-            <button id="btn-reset" class="btn bg" onclick="resetLevel()">↺ Reset</button>
-          </div>
-          <div class="fb empty" id="afb">
-            <span class="fb-ico">🌟</span><span>Fill in the matrix and click Apply!</span>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title"><span class="ico">💡</span> Level Hint</div>
+        <div class="info-tab-panel" id="info-hint" role="tabpanel" data-info-panel="hint" hidden>
+          <div class="mlabel">💡 Level Hint</div>
           <div class="teach-panel"><div class="teach-body" id="teach-txt"></div></div>
         </div>
-
       </div>
     </div>
   </div>

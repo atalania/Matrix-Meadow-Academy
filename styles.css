@@ -155,6 +155,224 @@ body {
 @media(max-width:720px){.game-layout{grid-template-columns:1fr;}}
 .left-col>*+*{margin-top:14px;}
 .right-col>*+*{margin-top:14px;}
+.alignment-layout{grid-template-columns:minmax(0,1.5fr) minmax(300px,.8fr);align-items:start;}
+.alignment-play-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.55fr);gap:16px;align-items:start;}
+.matrix-stage{background:linear-gradient(135deg,#fbfdff,#f8f4ff);border:1px solid #d9cdf044;border-radius:16px;padding:14px;}
+.info-tab-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px;}
+.info-tab-btn{border:1px solid #d4dce8;border-radius:999px;background:#f1f4f8;color:var(--muted);font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;padding:8px 10px;cursor:pointer;transition:all .12s;}
+.info-tab-btn.active{background:var(--purple);border-color:var(--purple);color:#fff;box-shadow:0 5px 12px rgba(94,53,177,.18);}
+.info-tab-btn:hover:not(.active){background:#ecf6ff;border-color:#b8cfe8;color:#355069;}
+.info-tab-panel{animation:fadeUp .18s ease;}
+@media(max-width:900px){
+  .alignment-layout,
+  .alignment-play-grid{grid-template-columns:1fr;}
+  .info-tab-bar{grid-template-columns:1fr 1fr;}
+  #tab-alignment #canvas-wrap{height:clamp(240px,58vw,360px);}
+}
+
+/* Desktop fit mode: wide mouse screens should show a full tab without page scrollbars. */
+@media (min-width: 1100px) and (pointer: fine) {
+  #app {
+    max-width: 1360px;
+    padding: 10px 14px 14px;
+    overflow: hidden;
+  }
+  #header {
+    margin-bottom: 8px;
+  }
+  #header h1 {
+    font-size: clamp(26px, 3vw, 36px);
+  }
+  #header p {
+    font-size: 12px;
+    margin-top: 0;
+  }
+  .tab-bar {
+    margin-bottom: 10px;
+  }
+  .tab-btn {
+    font-size: 12px;
+    padding: 7px 16px;
+  }
+  .stat-bar {
+    gap: 7px;
+    margin-bottom: 8px;
+  }
+  .chip {
+    font-size: 11.5px;
+    padding: 5px 10px;
+  }
+  .level-bar {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .ldot {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+  .panel {
+    border-radius: 16px;
+    padding: 12px;
+  }
+  .panel-title {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+  .panel-title .ico {
+    font-size: 17px;
+  }
+  .game-layout {
+    gap: 12px;
+  }
+  .left-col>*+*,
+  .right-col>*+* {
+    margin-top: 10px;
+  }
+  .concept,
+  .teach-body,
+  .solve-guide-body {
+    font-size: 11.5px;
+    line-height: 1.42;
+  }
+  .linfo,
+  .solve-guide {
+    margin-bottom: 10px;
+    padding: 10px;
+  }
+  .ltitle {
+    font-size: 16px;
+  }
+  .ldesc,
+  .lobj {
+    font-size: 11.5px;
+    line-height: 1.38;
+  }
+  .mcell {
+    width: 54px;
+    height: 42px;
+    font-size: 15px;
+  }
+  .mbrak {
+    font-size: 36px;
+  }
+  .brow {
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .btn {
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+  .fb {
+    min-height: 38px;
+    padding: 8px 10px;
+    font-size: 12px;
+    margin-top: 10px;
+  }
+
+  #tab-alignment .alignment-layout {
+    grid-template-columns: minmax(600px, 1fr) minmax(330px, .48fr);
+    align-items: start;
+  }
+  #tab-alignment .alignment-play-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  #tab-alignment .alignment-play-panel,
+  #tab-alignment .alignment-info-panel {
+    min-height: 0;
+    align-self: start;
+  }
+  #tab-alignment #canvas-wrap {
+    height: clamp(270px, 44vh, 410px);
+  }
+  #tab-alignment .matrix-stage {
+    display: grid;
+    grid-template-columns: auto auto minmax(180px, 1fr);
+    gap: 6px 14px;
+    align-items: center;
+    padding: 10px;
+  }
+  #tab-alignment .matrix-stage .panel-title {
+    grid-row: 1 / span 2;
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+  #tab-alignment .matrix-stage .mwrap {
+    grid-row: 1 / span 2;
+  }
+  #tab-alignment .matrix-stage .brow {
+    margin-top: 0;
+  }
+  #tab-alignment .matrix-stage .fb {
+    grid-column: 3;
+    margin-top: 0;
+  }
+  #tab-alignment .info-tab-bar {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  #tab-alignment .info-tab-btn {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+  #tab-alignment .legend-grid {
+    gap: 6px;
+  }
+  #tab-alignment .legend-item {
+    padding: 6px;
+  }
+  #tab-alignment .legend-item strong {
+    font-size: 11px;
+  }
+  #tab-alignment .legend-item span,
+  #tab-alignment .preset-note {
+    font-size: 10.5px;
+  }
+  #tab-alignment .preset-row {
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  #tab-alignment .preset-btn {
+    font-size: 11px;
+    padding: 5px 8px;
+  }
+  #tab-alignment .teach-panel {
+    padding: 10px;
+  }
+
+  #tab-drill > .panel {
+    margin-bottom: 8px !important;
+  }
+  #tab-drill > .panel .concept {
+    columns: 2;
+    column-gap: 18px;
+    font-size: 10.5px;
+    line-height: 1.24;
+    padding: 8px;
+  }
+  #tab-drill .dcard {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  #tab-drill .dmat-box {
+    padding: 9px;
+  }
+  #tab-drill table.dm {
+    border-spacing: 4px;
+  }
+  #tab-drill table.dm td {
+    min-width: 34px;
+    padding: 5px 6px;
+    font-size: 12px;
+  }
+  #tab-drill .dinput {
+    width: 48px;
+    height: 38px;
+    font-size: 13px;
+  }
+}
 
 .solve-guide{
   margin-bottom:14px;
@@ -315,7 +533,6 @@ table.dm td{min-width:40px;text-align:center;padding:7px 8px;background:rgba(255
   #app { padding: 14px 12px 32px; }
   .panel { padding: 15px 14px; }
   .tab-btn { font-size: 13px; padding: 9px 16px; }
-  .stat-bar { justify-content:flex-start; }
   .legend-grid { grid-template-columns:1fr; }
 }
 
@@ -355,7 +572,8 @@ table.dm td{min-width:40px;text-align:center;padding:7px 8px;background:rgba(255
     padding: 15px 14px;
   }
   .stat-bar {
-    justify-content: flex-start;
+    justify-content: center;
+    row-gap: 8px;
   }
   .legend-grid {
     grid-template-columns: 1fr;
@@ -397,6 +615,19 @@ table.dm td{min-width:40px;text-align:center;padding:7px 8px;background:rgba(255
     font-size: 11.5px;
     padding: 6px 10px;
   }
+  #tab-alignment #canvas-wrap {
+    height: clamp(220px, 62vw, 320px);
+  }
+  .info-tab-btn {
+    min-height: 42px;
+    padding: 9px 8px;
+  }
+  .matrix-stage .brow {
+    justify-content: center;
+  }
+  .mcell {
+    font-size: 16px;
+  }
   /* iOS: inputs below 16px can trigger focus-zoom */
   .dinput {
     font-size: 16px;
@@ -407,20 +638,14 @@ table.dm td{min-width:40px;text-align:center;padding:7px 8px;background:rgba(255
   }
 }
 
-/* Very narrow: horizontal stat chips + drill matrices scroll instead of squashing */
+/* Very narrow: stat chips wrap and stay centered (no left-heavy scroll strip) */
 @media (max-width: 480px) {
   .stat-bar {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    overflow-y: hidden;
-    gap: 7px;
-    padding-bottom: 6px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-  }
-  .stat-bar .chip {
-    flex: 0 0 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 7px 8px;
+    row-gap: 8px;
+    padding-bottom: 0;
   }
   #drill-mats {
     overflow-x: auto;

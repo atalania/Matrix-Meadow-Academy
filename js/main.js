@@ -69,6 +69,29 @@ function initTabs() {
   });
 }
 
+function initAlignmentInfoTabs() {
+  const buttons = [...document.querySelectorAll('.info-tab-btn')];
+  const panels = [...document.querySelectorAll('.info-tab-panel')];
+  if (!buttons.length || !panels.length) return;
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.infoTab;
+      buttons.forEach((x) => {
+        const isActive = x === btn;
+        x.classList.toggle('active', isActive);
+        x.setAttribute('aria-selected', String(isActive));
+      });
+      panels.forEach((panel) => {
+        const isActive = panel.dataset.infoPanel === tab;
+        panel.classList.toggle('active', isActive);
+        panel.hidden = !isActive;
+      });
+      notifyEmbedLayout();
+    });
+  });
+}
+
 function initQuizLockModal() {
   const modal = document.getElementById('quiz-lock-modal');
   if (!modal) return;
@@ -100,6 +123,7 @@ async function boot() {
   window.addEventListener('mma:score-bests-updated', refreshTrackHud);
   initQuizUnlockGate();
   initTabs();
+  initAlignmentInfoTabs();
   initEmbedLayout();
   initAlignment();
   initIframeLayout();
