@@ -360,24 +360,30 @@ table.dm td{min-width:40px;text-align:center;padding:7px 8px;background:rgba(255
   .legend-grid {
     grid-template-columns: 1fr;
   }
+  /* Grid: two tabs on row 1, vocab full-width centered on row 2 — avoids
+     nowrap+scroll which clips the third tab on many mobile browsers. */
   .tab-bar {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    overflow-y: hidden;
-    gap: 8px;
-    padding: 4px 2px 10px;
-    margin-left: calc(-1 * max(12px, env(safe-area-inset-left, 0px)));
-    margin-right: calc(-1 * max(12px, env(safe-area-inset-right, 0px)));
-    padding-left: max(12px, env(safe-area-inset-left, 0px));
-    padding-right: max(12px, env(safe-area-inset-right, 0px));
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 10px;
+    padding: 4px 0 10px;
+    margin-left: 0;
+    margin-right: 0;
+    justify-items: stretch;
+    align-items: stretch;
+  }
+  .tab-bar .tab-btn:nth-child(3) {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 100%;
+    max-width: min(100%, 320px);
   }
   .tab-btn {
-    flex: 0 0 auto;
-    white-space: nowrap;
-    padding: 10px 14px;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+    padding: 10px 12px;
     font-size: 12px;
   }
   #header h1 {
