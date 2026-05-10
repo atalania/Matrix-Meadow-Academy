@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
   <title>Matrix Meadow Academy</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -98,10 +98,10 @@
             <div class="mwrap">
               <span class="mbrak">[</span>
               <div class="mgrid">
-                <input class="mcell" id="i00" type="number" step="any" placeholder="?">
-                <input class="mcell" id="i01" type="number" step="any" placeholder="?">
-                <input class="mcell" id="i10" type="number" step="any" placeholder="?">
-                <input class="mcell" id="i11" type="number" step="any" placeholder="?">
+                <input class="mcell" id="i00" type="number" step="any" inputmode="decimal" placeholder="?">
+                <input class="mcell" id="i01" type="number" step="any" inputmode="decimal" placeholder="?">
+                <input class="mcell" id="i10" type="number" step="any" inputmode="decimal" placeholder="?">
+                <input class="mcell" id="i11" type="number" step="any" inputmode="decimal" placeholder="?">
               </div>
               <span class="mbrak">]</span>
             </div>
@@ -303,7 +303,7 @@ of a ROW of A with a COLUMN of B.
   </div>
 </div>
 
-<!-- New player tutorial modal (multi-step wizard; steps driven from js/main.js) -->
+<!-- New player tutorial modal (multi-step wizard; steps in js/welcome-steps.js) -->
 <div id="welcome-modal" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
   <div class="welcome-card welcome-card-wide">
     <button class="welcome-close" id="welcome-close" aria-label="Close tutorial">×</button>

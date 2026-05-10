@@ -47,6 +47,20 @@ The tutor calls `POST /api/ai/openai`. In development, [vite.config.js](vite.con
 
 The build uses `base: /staticGames/matrix-meadow/` (from [data/game.json](data/game.json)) for portal-style hosting. For GitHub Pages or a site root, change `base` in `vite.config.js` (e.g. `'/'` or `'/your-repo-name/'`).
 
+### Portal / mobile iframe
+
+Hosting on `/games/matrix-meadow` uses a **fixed-height iframe**; this repo follows the STEM Games embed conventions (`html`/`body` fill, **`#app`** scrolls, container-based canvas resize). See **[MOBILE_EMBED_GAME_GUIDE.md](MOBILE_EMBED_GAME_GUIDE.md)** for assumptions, `embedHeight`, and verification. Parent pages can listen for `postMessage` payloads `{ source: 'matrix-meadow-academy', type: 'mma-embed-content-height', height }` (narrow / touch embeds only) to adjust iframe height.
+
+#### Portal / mobile iframe checklist
+
+- [ ] Viewport meta: `width=device-width`, `initial-scale=1`, `viewport-fit=cover`, `maximum-scale=5`
+- [ ] Root layout: `html, body { height: 100%; }`, `#app` with `height: 100%` and `overflow-y: auto` — no `100vh` as the only scroll-surface height inside the embed
+- [ ] Resize: `resize` + `visualViewport` + `mma:iframe-layout` → `resizeCanvas()` from **#canvas-wrap** width (`js/iframe-layout.js`, `js/alignment-game.js`)
+- [ ] Touch: ≥ 44×44px tap targets on coarse pointers; `touch-action: manipulation` on `body` (portal baseline)
+- [ ] Safe area: critical UI clears iOS home indicator (`env(safe-area-inset-bottom)` on `#app` / modals)
+- [ ] Test: `/games/matrix-meadow` on a phone (portrait + landscape) and “Open in new tab”
+- [ ] [data/game.json](data/game.json) **`embedHeight`** matches the minimum playable height you tested
+
 ## Project layout
 
 | Path | Role |
@@ -62,7 +76,10 @@ The build uses `base: /staticGames/matrix-meadow/` (from [data/game.json](data/g
 | `js/monster-renderer.js` | Canvas drawing |
 | `js/tutor.js` | Tutor API client |
 | `js/assistant-bridge.js` | `postMessage` to parent frame (portal integration) |
-| `data/game.json` | Game id and metadata for embeds |
+| `js/embed-layout.js` | Optional iframe height `postMessage` (mobile / coarse pointer) |
+| `js/iframe-layout.js` | `load` / `resize` / `visualViewport` → `mma:iframe-layout` for canvas |
+| `data/game.json` | Game id, **`embedHeight`**, metadata for portal embeds |
+| `MOBILE_EMBED_GAME_GUIDE.md` | Portal iframe sizing assumptions and checklist |
 
 ### Portal `data_json` (leaderboards)
 
